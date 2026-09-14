@@ -43,7 +43,7 @@
                 </div>
             </div>
             <div class="flex items-center gap-2 flex-wrap justify-end">
-                <!-- Event Switcher / Selector -->
+                <!-- Event Switcher -->
                 <select id="eventSelector" onchange="switchEvent(this.value)" class="text-xs bg-emerald-50 border border-emerald-300 rounded-xl px-2.5 py-2 font-bold text-emerald-900 outline-none cursor-pointer">
                     <!-- Populated dynamically -->
                 </select>
@@ -56,7 +56,7 @@
                     <option value="ko">한국어</option>
                 </select>
 
-                <!-- QR Modal Button -->
+                <!-- QR Modal Button (Visible to all) -->
                 <button onclick="openQrModal()" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs px-3 py-2 rounded-xl transition font-medium flex items-center gap-1.5">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
@@ -69,7 +69,8 @@
                     <span data-i18n="auto_update">自動更新中</span>
                 </div>
                 
-                <button onclick="openAdminModal()" class="bg-slate-800 hover:bg-slate-700 text-white text-xs px-3.5 py-2 rounded-xl transition font-medium shadow-xs flex items-center gap-1.5">
+                <!-- Admin Button (Only shown when admin mode is active) -->
+                <button id="adminButton" onclick="openAdminModal()" class="bg-slate-800 hover:bg-slate-700 text-white text-xs px-3.5 py-2 rounded-xl transition font-medium shadow-xs flex items-center gap-1.5 hidden">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.08 2.085.096 2.37-1.066z" />
                     </svg>
@@ -149,7 +150,7 @@
             </div>
         </div>
 
-        <!-- Overall Schedule / Timetable Section (Public view: No attendees & no notes) -->
+        <!-- Overall Schedule / Timetable Section (Public view: Attendees & notes completely hidden) -->
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-4">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                 <div>
@@ -253,7 +254,7 @@
             </div>
             
             <div class="p-6 space-y-6">
-                <!-- Event Management Section (Create New & Switch) -->
+                <!-- Event Management Section -->
                 <div class="bg-emerald-50/70 p-4 rounded-xl border border-emerald-200 space-y-3">
                     <h3 class="font-bold text-emerald-900 text-sm flex items-center gap-2">
                         <span class="w-2 h-2 rounded-full bg-emerald-700"></span><span data-i18n="admin_event_mgmt">イベントアーカイブ・新規作成管理</span>
@@ -265,7 +266,7 @@
                             + 新しいイベントを作成
                         </button>
                     </div>
-                    <div class="pt-2 border-t border-emerald-200/60 flex items-center justify-between text-xs">
+                    <div class="pt-2 border-t border-emerald-200/60 flex items-center justify-between text-xs flex-wrap gap-2">
                         <span class="font-bold text-emerald-900" data-i18n="admin_current_event_label">現在管理中のイベント固有URL:</span>
                         <div class="flex items-center gap-2">
                             <button onclick="copyEventUrl()" class="bg-white hover:bg-emerald-100 text-emerald-800 border border-emerald-300 px-3 py-1 rounded-md font-medium transition" data-i18n="btn_copy_url">
@@ -284,7 +285,7 @@
                         <h4 class="font-bold text-slate-800 text-xs" data-i18n="admin_csv_title">📊 参加者・集計データのエクスポート</h4>
                         <p class="text-[11px] text-slate-500" data-i18n="admin_csv_desc">参加者数やメモを含めた全データをCSVとしてダウンロードできます</p>
                     </div>
-                    <button onclick="exportCsv()" class="bg-slate-800 hover:bg-slate-700 text-white text-xs px-3.5 py-2 rounded-lg transition font-medium">
+                    <button onclick="exportCsv()" class="bg-slate-800 hover:bg-slate-700 text-white text-xs px-3.5 py-2 rounded-lg transition font-medium" data-i18n="btn_csv_download">
                         CSVダウンロード
                     </button>
                 </div>
@@ -316,9 +317,9 @@
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 mb-1" data-i18n="admin_lbl_status">現在の状態（ステータス）</label>
                         <select id="adminVenueStatus" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white font-bold text-emerald-900">
-                            <option value="席入り中">🟢 席入り中（今すぐ入場可能・10分前にお集まりください）</option>
-                            <option value="お点前中">🔴 お点前中（入場締め切り・次回待機）</option>
-                            <option value="片付け中">⏳ 片付け中・準備中</option>
+                            <option value="席入り中" data-i18n="opt_status_1">🟢 席入り中（今すぐ入場可能・10分前にお集まりください）</option>
+                            <option value="お点前中" data-i18n="opt_status_2">🔴 お点前中（入場締め切り・次回待機）</option>
+                            <option value="片付け中" data-i18n="opt_status_3">⏳ 片付け中・準備中</option>
                         </select>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -380,7 +381,7 @@
     </div>
 
     <script>
-        // Multi-language dictionary (Fully translated across all languages)
+        // Comprehensive Multi-language Dictionary (Fully translated across all languages)
         const i18n = {
             ja: {
                 pageTitle: "お茶会 進行状況・お戻り目安確認ボード",
@@ -425,12 +426,16 @@
                 btn_delete_event: "このイベントを削除",
                 admin_csv_title: "📊 参加者・集計データのエクスポート",
                 admin_csv_desc: "参加者数やメモを含めた全データをCSVとしてダウンロードできます",
+                btn_csv_download: "CSVダウンロード",
                 admin_general_title: "全体設定・お知らせ",
                 admin_lbl_title: "イベントタイトル",
                 admin_lbl_announcement: "運営からのお知らせ（空欄で非表示）",
                 admin_venue_title: "現在のメイン席ステータス設定",
                 admin_lbl_vname: "茶室・お席名",
                 admin_lbl_status: "現在の状態（ステータス）",
+                opt_status_1: "🟢 席入り中（今すぐ入場可能・10分前にお集まりください）",
+                opt_status_2: "🔴 お点前中（入場締め切り・次回待機）",
+                opt_status_3: "⏳ 片付け中・準備中",
                 admin_lbl_curgroup: "現在席に入っている整理券番号",
                 admin_lbl_nextgroup: "待合にご案内する次の整理券番号",
                 admin_lbl_waitinginfo: "待合へのコメント・アナウンス",
@@ -481,12 +486,16 @@
                 btn_delete_event: "Delete This Event",
                 admin_csv_title: "📊 Export Participant & Summary Data",
                 admin_csv_desc: "Download all data including attendees and notes as a CSV file",
+                btn_csv_download: "Download CSV",
                 admin_general_title: "General Settings & Notice",
                 admin_lbl_title: "Event Title",
                 admin_lbl_announcement: "Notice from Organizers (leave blank to hide)",
                 admin_venue_title: "Main Venue Status Settings",
                 admin_lbl_vname: "Venue / Room Name",
                 admin_lbl_status: "Current Status",
+                opt_status_1: "🟢 Seating in Progress (Open now - arrive 10m early)",
+                opt_status_2: "🔴 Tea Preparation (Closed - wait for next session)",
+                opt_status_3: "⏳ Cleaning / Preparing",
                 admin_lbl_curgroup: "Current Seating Ticket Numbers",
                 admin_lbl_nextgroup: "Next Waiting Ticket Numbers",
                 admin_lbl_waitinginfo: "Waiting Area Announcement",
@@ -537,12 +546,16 @@
                 btn_delete_event: "删除此活动",
                 admin_csv_title: "📊 导出参与者与统计数据",
                 admin_csv_desc: "可将包含人数与备注的完整数据导出为CSV文件",
+                btn_csv_download: "下载CSV",
                 admin_general_title: "通用设置与公告",
                 admin_lbl_title: "活动标题",
                 admin_lbl_announcement: "运营公告（留空则不显示）",
                 admin_venue_title: "主会场状态设置",
                 admin_lbl_vname: "茶室/会场名称",
                 admin_lbl_status: "当前状态",
+                opt_status_1: "🟢 入席中（可立即入场・请提前10分钟集合）",
+                opt_status_2: "🔴 点前中（已截止入场・请等待下一场）",
+                opt_status_3: "⏳ 清理・准备中",
                 admin_lbl_curgroup: "当前入席整理券号",
                 admin_lbl_nextgroup: "下一场等候整理券号",
                 admin_lbl_waitinginfo: "等候区公告说明",
@@ -593,12 +606,16 @@
                 btn_delete_event: "이 이벤트 삭제",
                 admin_csv_title: "📊 참가자 및 집계 데이터 내보내기",
                 admin_csv_desc: "참가자 수와 메모가 포함된 전체 데이터를 CSV 파일로 다운로드할 수 있습니다",
+                btn_csv_download: "CSV 다운로드",
                 admin_general_title: "전체 설정 및 공지",
                 admin_lbl_title: "이벤트 타이틀",
                 admin_lbl_announcement: "운영 공지사항 (공란 시 미표시)",
                 admin_venue_title: "현재 메인석 상태 설정",
                 admin_lbl_vname: "다실/좌석명",
                 admin_lbl_status: "현재 상태",
+                opt_status_1: "🟢 입장 중 (즉시 입장 가능・10분 전 집결)",
+                opt_status_2: "🔴 다점 중 (입장 마감・다음 회차 대기)",
+                opt_status_3: "⏳ 정리/준비 중",
                 admin_lbl_curgroup: "현재 입장 중인 정리권 번호",
                 admin_lbl_nextgroup: "대기 구역 안내할 다음 정리권 번호",
                 admin_lbl_waitinginfo: "대기 구역 안내 코멘트",
@@ -612,8 +629,8 @@
         const INDEX_KEY = "tea_ceremony_event_index_v5";
         let currentLang = "ja";
         let currentEventId = "default_event";
+        let isAdminMode = false;
 
-        // Get list of all event IDs
         function getEventIndex() {
             const stored = localStorage.getItem(INDEX_KEY);
             if (!stored) {
@@ -677,10 +694,10 @@
         }
 
         function initApp() {
-            // Check URL parameters for event ID (e.g., ?event=spring_2026)
             const urlParams = new URLSearchParams(window.location.search);
             const paramEvent = urlParams.get("event");
-            
+            const hasEventParam = urlParams.has("event");
+
             const index = getEventIndex();
             if (paramEvent && index.includes(paramEvent)) {
                 currentEventId = paramEvent;
@@ -690,6 +707,19 @@
 
             if (!localStorage.getItem(STORAGE_PREFIX + currentEventId)) {
                 saveData(getDefaultEventData());
+            }
+
+            // If user enters index.html directly WITHOUT ?event=, automatically set admin mode & open QR modal
+            if (!hasEventParam) {
+                isAdminMode = true;
+                document.getElementById("adminButton").classList.remove("hidden");
+                // Open QR modal automatically so staff immediately sees the flyer/QR code to print
+                setTimeout(() => {
+                    openQrModal();
+                }, 300);
+            } else {
+                isAdminMode = false;
+                document.getElementById("adminButton").classList.add("hidden");
             }
 
             updateEventSelectorDropdown();
@@ -713,7 +743,6 @@
 
         function switchEvent(eventId) {
             currentEventId = eventId;
-            // Update URL query parameter without reloading page
             const url = new URL(window.location);
             url.searchParams.set("event", eventId);
             window.history.pushState({}, '', url);
@@ -746,7 +775,7 @@
         function deleteCurrentEvent() {
             const index = getEventIndex();
             if (index.length <= 1) {
-                alert("最後のイベントは削除できません。"); // Non-alert note: kept only as fallback guard
+                showToast("最後のイベントは削除できません。");
                 return;
             }
             if (confirm("このイベントデータを削除しますか？")) {
@@ -792,7 +821,6 @@
             const dict = i18n[currentLang] || i18n.ja;
             document.getElementById("pageTitleMeta").textContent = dict.pageTitle;
             
-            // Translate static elements with data-i18n
             document.querySelectorAll("[data-i18n]").forEach(el => {
                 const key = el.getAttribute("data-i18n");
                 if (dict[key]) {
@@ -802,7 +830,7 @@
             renderView();
         }
 
-        // Render main public view (Attendees and notes are omitted here)
+        // Render main view
         function renderView() {
             const data = getData(currentEventId);
 
@@ -849,7 +877,7 @@
                 currentNoteDisplay.textContent = "💡 " + v.note;
             }
 
-            // Render Public Schedule Table (Attendees & Notes excluded)
+            // Render Public Schedule Table
             const tbody = document.getElementById("scheduleTableBody");
             tbody.innerHTML = "";
 
