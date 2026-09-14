@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="pageTitleMeta">お茶会 進行状況・お戻り目安確認ボード</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts Inter & Noto Sans JP -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- QR Code Generator Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        body {
+            font-family: 'Noto Sans JP', 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        .japanese-pattern {
+            background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+        @media print {
+            body { background: white !important; }
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+        }
+    </style>
+</head>
+<body class="japanese-pattern min-h-screen text-slate-800 flex flex-col justify-between">
+
+    <!-- Header -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-xs no-print">
+        <div class="max-w-4xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-emerald-800 text-white p-2.5 rounded-xl shadow-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <div>
+                    <h1 id="eventTitleDisplay" class="text-xl font-bold text-slate-900 tracking-tight">春のお茶会 進行状況ボード</h1>
+                    <p class="text-xs text-slate-500" data-i18n="subtitle">整理券をお持ちの方のリアルタイムお戻り目安・お席状況</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 flex-wrap justify-end">
+                <!-- Event Switcher / Selector -->
+                <select id="eventSelector" onchange="switchEvent(this.value)" class="text-xs bg-emerald-50 border border-emerald-300 rounded-xl px-2.5 py-2 font-bold text-emerald-900 outline-none cursor-pointer">
+                    <!-- Populated dynamically -->
+                </select>
+
+                <!-- Language Selector -->
+                <select id="langSelector" onchange="changeLanguage(this.value)" class="text-xs bg-slate-100 border border-slate-300 rounded-xl px-2.5 py-2 font-medium text-slate-700 outline-none cursor-pointer">
+                    <option value="ja">日本語</option>
+                    <option value="en">English</option>
+                    <option value="zh">中文</option>
+                    <option value="ko">한국어</option>
+                </select>
+
+                <!-- QR Modal Button -->
+                <button onclick="openQrModal()" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs px-3 py-2 rounded-xl transition font-medium flex items-center gap-1.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                    </svg>
+                    <span data-i18n="qr_btn">受付用QR・案内状</span>
+                </button>
+
+                <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-800 border border-emerald-200">
+                    <span class="w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></span>
+                    <span data-i18n="auto_update">自動更新中</span>
+                </div>
+                
+                <button onclick="openAdminModal()" class="bg-slate-800 hover:bg-slate-700 text-white text-xs px-3.5 py-2 rounded-xl transition font-medium shadow-xs flex items-center gap-1.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.08 2.085.096 2.37-1.066z" />
+                    </svg>
+                    <span data-i18n="admin_btn">運営管理</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-4xl w-full mx-auto px-4 py-8 space-y-6">
+
+        <!-- Announcement Banner -->
+        <div id="announcementCard" class="bg-gradient-to-r from-emerald-900 to-teal-900 text-white rounded-2xl p-5 shadow-md relative overflow-hidden hidden">
+            <div class="flex items-start gap-3 relative z-10">
+                <div class="bg-white/10 p-2 rounded-xl">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-emerald-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="font-bold text-lg text-emerald-100" data-i18n="announcement_title">運営からのお知らせ</h2>
+                    <p id="announcementText" class="text-emerald-50 mt-1 text-sm leading-relaxed"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Essential Rules & Warnings Notice -->
+        <div class="bg-amber-50 border border-amber-200 rounded-2xl p-5 shadow-xs flex flex-col gap-3">
+            <div class="flex items-start gap-3">
+                <div class="bg-amber-100 text-amber-800 p-2.5 rounded-xl flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="text-sm font-bold text-amber-900" data-i18n="rules_header">お茶会ご参加の皆様へ大切なお願い（必ずご確認ください）</h2>
+                    <div class="text-xs text-amber-800 mt-2 space-y-1.5 leading-relaxed">
+                        <p data-i18n="rule_1">・<strong>「席入り中」</strong>の表示であれば、今すぐのご入場・ご案内が可能です（席入り<strong>10分前</strong>には待合スペースにお越しください）。</p>
+                        <p data-i18n="rule_2">・<strong>「お点前中」</strong>に変わると扉が閉まり入場できません。次の回（待合でお待ちいただく方）までお待ちいただきます。</p>
+                        <p data-i18n="rule_3">・当日の進行状況により、<strong>開始・終了時間にズレ（遅れや前倒し）が発生する場合がございます</strong>。余裕を持ってお戻りください。</p>
+                        <p data-i18n="rule_4">・混雑状況やお客様の誘導状況により、<strong>呼び出しの順番が前後・変更になる可能性</strong>がございます。</p>
+                    </div>
+                </div>
+            </div>
+            <div class="text-right text-xs text-amber-700 border-t border-amber-200/60 pt-2">
+                <span data-i18n="last_updated">最終更新時刻</span>: <span id="lastUpdatedTime" class="font-bold">--:--:--</span>
+            </div>
+        </div>
+
+        <!-- Single Main Venue Progress Card -->
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 space-y-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 pb-4">
+                <div>
+                    <span class="text-xs font-bold text-emerald-700 uppercase tracking-wider bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200" data-i18n="main_venue_tag">メイン会場</span>
+                    <h2 id="mainVenueNameDisplay" class="text-xl font-bold text-slate-900 mt-1">茶室：松風の間</h2>
+                </div>
+                <div id="mainStatusBadgeContainer">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+
+            <!-- Current & Next Tickets Info -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div id="currentBox" class="p-4 rounded-xl border">
+                    <span id="currentBoxTitle" class="text-xs font-semibold block mb-1" data-i18n="current_status">現在の状況</span>
+                    <span id="currentGroupDisplay" class="text-2xl font-bold block">--</span>
+                    <p id="currentNoteDisplay" class="text-xs mt-2 font-medium"></p>
+                </div>
+
+                <div class="bg-emerald-50/70 p-4 rounded-xl border border-emerald-200">
+                    <span class="text-xs font-semibold text-emerald-800 block mb-1" data-i18n="waiting_title">待合スペースのご案内（次の回）</span>
+                    <span id="nextGroupDisplay" class="text-2xl font-bold text-emerald-900 block">--</span>
+                    <p class="text-xs text-emerald-700 mt-2 font-medium bg-white/80 p-2 rounded-lg border border-emerald-200/60">
+                        📢 <span id="waitingInfoDisplay" data-i18n="waiting_default">待合スペースでお待ちください</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Overall Schedule / Timetable Section (Public view: No attendees & no notes) -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-4">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-900" data-i18n="schedule_header">進行スケジュール（実績・戻り目安）</h3>
+                    <p class="text-xs text-slate-500 mt-0.5" data-i18n="schedule_desc">実際に開始した時間や状況を入力しています。お戻り時間の目安にご活用ください。</p>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-slate-200 text-xs font-bold text-slate-500 bg-slate-50">
+                            <th class="p-3 rounded-l-xl" data-i18n="col_session">回数</th>
+                            <th class="p-3" data-i18n="col_ticket">対象整理券番号</th>
+                            <th class="p-3" data-i18n="col_starttime">実際の開始時間</th>
+                            <th class="p-3 rounded-r-xl" data-i18n="col_status">現在のステータス</th>
+                        </tr>
+                    </thead>
+                    <tbody id="scheduleTableBody" class="text-sm divide-y divide-slate-100">
+                        <!-- Populated dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 mt-12 py-6 text-center text-xs text-slate-500 no-print">
+        <div class="max-w-4xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-2">
+            <p>&copy; お茶会運営実行委員会 - 一方通行リアルタイム確認ボード</p>
+            <p data-i18n="footer_note">ページを再読み込みしなくても自動で最新の進み具合が表示されます。</p>
+        </div>
+    </footer>
+
+    <!-- QR Modal / Printable Flyer -->
+    <div id="qrModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-200 p-6 space-y-6">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3 no-print">
+                <h3 class="font-bold text-slate-900 text-lg flex items-center gap-2" data-i18n="modal_qr_title">
+                    📱 受付用QRコード・印刷案内状
+                </h3>
+                <button onclick="closeQrModal()" class="text-slate-400 hover:text-slate-600 p-2 rounded-lg hover:bg-slate-100 transition">✕</button>
+            </div>
+
+            <div id="printableArea" class="bg-white border-2 border-dashed border-emerald-300 rounded-2xl p-6 text-center space-y-4">
+                <div class="space-y-1">
+                    <span class="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full uppercase tracking-wider" data-i18n="modal_qr_tag">お茶会 進行状況</span>
+                    <h2 id="flyerEventTitle" class="text-xl font-extrabold text-slate-900 mt-2">春のお茶会 リアルタイム確認ボード</h2>
+                    <p class="text-xs text-slate-600" data-i18n="modal_qr_desc">お手元のスマートフォンでQRコードを読み取ってください</p>
+                </div>
+
+                <div class="flex justify-center my-4">
+                    <div id="qrcode" class="p-3 bg-white border border-slate-200 rounded-xl shadow-xs inline-block"></div>
+                </div>
+
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-left space-y-1">
+                    <p class="text-xs font-bold text-slate-700" data-i18n="modal_qr_howto">📌 ご利用方法:</p>
+                    <p class="text-xs text-slate-600 leading-relaxed" data-i18n="modal_qr_steps">
+                        1. カメラアプリで上のQRコードをスキャンします。<br>
+                        2. ページを開くと、現在の席入り状況やお戻り目安時間がリアルタイムで表示されます。<br>
+                        3. 席入り10分前には待合スペースへお越しください。
+                    </p>
+                </div>
+
+                <div class="text-[10px] text-slate-400 font-mono break-all pt-2">
+                    URL: <span id="currentUrlDisplay"></span>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3 no-print pt-2">
+                <button onclick="closeQrModal()" class="px-4 py-2 border border-slate-300 hover:bg-slate-100 text-slate-700 rounded-xl text-sm font-medium transition" data-i18n="btn_close">
+                    閉じる
+                </button>
+                <button onclick="window.print()" class="px-5 py-2 bg-emerald-800 hover:bg-emerald-700 text-white rounded-xl text-sm font-bold shadow-sm transition flex items-center gap-2" data-i18n="btn_print">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                    </svg>
+                    印刷する
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Modal -->
+    <div id="adminModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden no-print">
+        <div class="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-200">
+            <div class="p-6 border-b border-slate-100 flex justify-between items-center sticky top-0 bg-white z-10">
+                <div class="flex items-center gap-2">
+                    <div class="bg-slate-800 text-white p-2 rounded-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.08 2.085.096 2.37-1.066z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-900" data-i18n="admin_panel_title">運営スタッフ用 管理パネル・イベント管理</h2>
+                        <p class="text-xs text-slate-500" data-i18n="admin_panel_subtitle">過去のイベント管理、参加者集計、各イベント専用URLの発行ができます</p>
+                    </div>
+                </div>
+                <button onclick="closeAdminModal()" class="text-slate-400 hover:text-slate-600 p-2 rounded-lg hover:bg-slate-100 transition">✕</button>
+            </div>
+            
+            <div class="p-6 space-y-6">
+                <!-- Event Management Section (Create New & Switch) -->
+                <div class="bg-emerald-50/70 p-4 rounded-xl border border-emerald-200 space-y-3">
+                    <h3 class="font-bold text-emerald-900 text-sm flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-emerald-700"></span><span data-i18n="admin_event_mgmt">イベントアーカイブ・新規作成管理</span>
+                    </h3>
+                    <p class="text-xs text-emerald-700" data-i18n="admin_event_desc">イベントごとにデータを独立して保存できます。新しいお茶会やお別れ会等を作成するには下のボタンを押してください。</p>
+                    <div class="flex flex-col sm:flex-row gap-2 items-center">
+                        <input type="text" id="newEventNameInput" placeholder="新しいイベント名（例: 秋の茶会 2026）" class="w-full sm:flex-grow px-3 py-2 border border-slate-300 rounded-lg text-xs bg-white outline-none focus:ring-2 focus:ring-emerald-500">
+                        <button onclick="createNewEvent()" class="w-full sm:w-auto bg-emerald-800 hover:bg-emerald-700 text-white text-xs px-4 py-2 rounded-lg transition font-bold shadow-sm whitespace-nowrap" data-i18n="btn_create_event">
+                            + 新しいイベントを作成
+                        </button>
+                    </div>
+                    <div class="pt-2 border-t border-emerald-200/60 flex items-center justify-between text-xs">
+                        <span class="font-bold text-emerald-900" data-i18n="admin_current_event_label">現在管理中のイベント固有URL:</span>
+                        <div class="flex items-center gap-2">
+                            <button onclick="copyEventUrl()" class="bg-white hover:bg-emerald-100 text-emerald-800 border border-emerald-300 px-3 py-1 rounded-md font-medium transition" data-i18n="btn_copy_url">
+                                専用アドレスをコピー
+                            </button>
+                            <button onclick="deleteCurrentEvent()" class="text-rose-600 hover:text-rose-800 font-medium px-2 py-1" data-i18n="btn_delete_event">
+                                このイベントを削除
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Data Export Tools -->
+                <div class="bg-slate-100 p-4 rounded-xl border border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-3">
+                    <div>
+                        <h4 class="font-bold text-slate-800 text-xs" data-i18n="admin_csv_title">📊 参加者・集計データのエクスポート</h4>
+                        <p class="text-[11px] text-slate-500" data-i18n="admin_csv_desc">参加者数やメモを含めた全データをCSVとしてダウンロードできます</p>
+                    </div>
+                    <button onclick="exportCsv()" class="bg-slate-800 hover:bg-slate-700 text-white text-xs px-3.5 py-2 rounded-lg transition font-medium">
+                        CSVダウンロード
+                    </button>
+                </div>
+
+                <!-- General Info Edit -->
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
+                    <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-emerald-700"></span><span data-i18n="admin_general_title">全体設定・お知らせ</span>
+                    </h3>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1" data-i18n="admin_lbl_title">イベントタイトル</label>
+                        <input type="text" id="adminEventTitle" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1" data-i18n="admin_lbl_announcement">運営からのお知らせ（空欄で非表示）</label>
+                        <textarea id="adminAnnouncement" rows="2" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-emerald-500" placeholder="例：ただいま進行に10分ほどの遅れが生じております。"></textarea>
+                    </div>
+                </div>
+
+                <!-- Main Venue Status Control -->
+                <div class="bg-emerald-50/50 p-4 rounded-xl border border-emerald-200 space-y-4">
+                    <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-emerald-700"></span><span data-i18n="admin_venue_title">現在のメイン席ステータス設定</span>
+                    </h3>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1" data-i18n="admin_lbl_vname">茶室・お席名</label>
+                        <input type="text" id="adminVenueName" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1" data-i18n="admin_lbl_status">現在の状態（ステータス）</label>
+                        <select id="adminVenueStatus" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white font-bold text-emerald-900">
+                            <option value="席入り中">🟢 席入り中（今すぐ入場可能・10分前にお集まりください）</option>
+                            <option value="お点前中">🔴 お点前中（入場締め切り・次回待機）</option>
+                            <option value="片付け中">⏳ 片付け中・準備中</option>
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1" data-i18n="admin_lbl_curgroup">現在席に入っている整理券番号</label>
+                            <input type="text" id="adminCurrentGroup" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white" placeholder="例: 整理券 No. 1 〜 15">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1" data-i18n="admin_lbl_nextgroup">待合にご案内する次の整理券番号</label>
+                            <input type="text" id="adminNextGroup" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white" placeholder="例: 整理券 No. 16 〜 30">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1" data-i18n="admin_lbl_waitinginfo">待合へのコメント・アナウンス</label>
+                        <input type="text" id="adminWaitingInfo" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white" placeholder="例: 待合スペースにお集まりください。順番が前後する場合があります。">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1" data-i18n="admin_lbl_note">状況メモ</label>
+                        <input type="text" id="adminVenueNote" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white" placeholder="例: ただいまスムーズにご案内中です。">
+                    </div>
+                </div>
+
+                <!-- Schedule / Timetable & Attendees Management -->
+                <div class="space-y-4 pt-4 border-t border-slate-200">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-emerald-700"></span><span data-i18n="admin_sched_title">全体スケジュール（実績・人数・メモ）の編集</span>
+                            </h3>
+                            <p class="text-xs text-slate-500 mt-0.5" data-i18n="admin_sched_desc">実際の開始時間、参加人数、スタッフ用メモを入力できます（※参加人数とメモは管理者のみ閲覧可能）</p>
+                        </div>
+                        <button onclick="addScheduleField()" class="text-xs bg-slate-800 hover:bg-slate-700 text-white px-3 py-1.5 rounded-lg transition font-medium" data-i18n="btn_add_row">
+                            + 行を追加
+                        </button>
+                    </div>
+                    <div id="adminScheduleList" class="space-y-3">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3 sticky bottom-0">
+                <button onclick="closeAdminModal()" class="px-4 py-2 border border-slate-300 hover:bg-slate-100 text-slate-700 rounded-xl text-sm font-medium transition" data-i18n="btn_close">
+                    キャンセル
+                </button>
+                <button onclick="saveAdminData()" class="px-5 py-2 bg-emerald-800 hover:bg-emerald-700 text-white rounded-xl text-sm font-bold shadow-sm transition" data-i18n="btn_save">
+                    変更を保存して反映
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toastNotification" class="fixed bottom-6 right-6 bg-slate-900 text-white px-5 py-3 rounded-xl shadow-xl transform translate-y-20 opacity-0 transition-all duration-300 z-50 flex items-center gap-3 text-sm no-print">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-emerald-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+        </svg>
+        <span id="toastMessage">設定を保存しました</span>
+    </div>
+
+    <script>
+        // Multi-language dictionary (Fully translated across all languages)
+        const i18n = {
+            ja: {
+                pageTitle: "お茶会 進行状況・お戻り目安確認ボード",
+                subtitle: "整理券をお持ちの方のリアルタイムお戻り目安・お席状況",
+                qr_btn: "受付用QR・案内状",
+                auto_update: "自動更新中",
+                admin_btn: "運営管理",
+                announcement_title: "運営からのお知らせ",
+                rules_header: "お茶会ご参加の皆様へ大切なお願い（必ずご確認ください）",
+                rule_1: "・<strong>「席入り中」</strong>の表示であれば、今すぐのご入場・ご案内が可能です（席入り<strong>10分前</strong>には待合スペースにお越しください）。",
+                rule_2: "・<strong>「お点前中」</strong>に変わると扉が閉まり入場できません。次の回（待合でお待ちいただく方）までお待ちいただきます。",
+                rule_3: "・当日の進行状況により、<strong>開始・終了時間にズレ（遅れや前倒し）が発生する場合がございます</strong>。余裕を持ってお戻りください。",
+                rule_4: "・混雑状況やお客様の誘導状況により、<strong>呼び出しの順番が前後・変更になる可能性</strong>がございます。",
+                last_updated: "最終更新時刻",
+                main_venue_tag: "メイン会場",
+                current_status: "現在の状況",
+                waiting_title: "待合スペースのご案内（次の回）",
+                waiting_default: "待合スペースでお待ちください",
+                schedule_header: "進行スケジュール（実績・戻り目安）",
+                schedule_desc: "実際に開始した時間や状況を入力しています。お戻り時間の目安にご活用ください。",
+                col_session: "回数",
+                col_ticket: "対象整理券番号",
+                col_starttime: "実際の開始時間",
+                col_status: "現在のステータス",
+                footer_note: "ページを再読み込みしなくても自動で最新の進み具合が表示されます。",
+                modal_qr_title: "📱 受付用QRコード・印刷案内状",
+                modal_qr_tag: "お茶会 進行状況",
+                modal_qr_desc: "お手元のスマートフォンでQRコードを読み取ってください",
+                modal_qr_howto: "📌 ご利用方法:",
+                modal_qr_steps: "1. カメラアプリで上のQRコードをスキャンします。<br>2. ページを開くと、現在の席入り状況やお戻り目安時間がリアルタイムで表示されます。<br>3. 席入り10分前には待合スペースへお越しください。",
+                btn_close: "閉じる",
+                btn_print: "印刷する",
+                btn_save: "変更を保存して反映",
+                btn_add_row: "+ 行を追加",
+                admin_panel_title: "運営スタッフ用 管理パネル・イベント管理",
+                admin_panel_subtitle: "過去のイベント管理、参加者集計、各イベント専用URLの発行ができます",
+                admin_event_mgmt: "イベントアーカイブ・新規作成管理",
+                admin_event_desc: "イベントごとにデータを独立して保存できます。新しいお茶会やお別れ会等を作成するには下のボタンを押してください。",
+                btn_create_event: "+ 新しいイベントを作成",
+                admin_current_event_label: "現在管理中のイベント固有URL:",
+                btn_copy_url: "専用アドレスをコピー",
+                btn_delete_event: "このイベントを削除",
+                admin_csv_title: "📊 参加者・集計データのエクスポート",
+                admin_csv_desc: "参加者数やメモを含めた全データをCSVとしてダウンロードできます",
+                admin_general_title: "全体設定・お知らせ",
+                admin_lbl_title: "イベントタイトル",
+                admin_lbl_announcement: "運営からのお知らせ（空欄で非表示）",
+                admin_venue_title: "現在のメイン席ステータス設定",
+                admin_lbl_vname: "茶室・お席名",
+                admin_lbl_status: "現在の状態（ステータス）",
+                admin_lbl_curgroup: "現在席に入っている整理券番号",
+                admin_lbl_nextgroup: "待合にご案内する次の整理券番号",
+                admin_lbl_waitinginfo: "待合へのコメント・アナウンス",
+                admin_lbl_note: "状況メモ",
+                admin_sched_title: "全体スケジュール（実績・人数・メモ）の編集",
+                admin_sched_desc: "実際の開始時間、参加人数、スタッフ用メモを入力できます（※参加人数とメモは管理者のみ閲覧可能）"
+            },
+            en: {
+                pageTitle: "Tea Ceremony Live Status & Return Time Guide",
+                subtitle: "Real-time seating status and estimated return times for ticket holders",
+                qr_btn: "Reception QR & Flyer",
+                auto_update: "Auto-updating",
+                admin_btn: "Admin Panel",
+                announcement_title: "Notice from Organizers",
+                rules_header: "Important Notice for All Participants",
+                rule_1: "・If status is <strong>'Seating in Progress'</strong>, you may enter now (please gather at the waiting area <strong>10 minutes</strong> before seating).",
+                rule_2: "・Once status changes to <strong>'Tea Preparation in Progress'</strong>, doors close and entry is closed until the next session.",
+                rule_3: "・Depending on schedule progress, <strong>timing delays or advances may occur</strong>. Please return with plenty of time.",
+                rule_4: "・Call order may be subject to <strong>slight changes or adjustments</strong> due to crowd flow.",
+                last_updated: "Last Updated",
+                main_venue_tag: "Main Venue",
+                current_status: "Current Status",
+                waiting_title: "Waiting Area Notice (Next Session)",
+                waiting_default: "Please wait in the designated waiting area",
+                schedule_header: "Progress Schedule & Return Guide",
+                schedule_desc: "Actual start times and statuses are recorded here to help you estimate your return time.",
+                col_session: "Session",
+                col_ticket: "Ticket Numbers",
+                col_starttime: "Actual Start Time",
+                col_status: "Status",
+                footer_note: "Status updates automatically without needing to refresh the page.",
+                modal_qr_title: "📱 Reception QR Code & Printable Flyer",
+                modal_qr_tag: "Tea Ceremony Status",
+                modal_qr_desc: "Scan the QR code with your smartphone camera",
+                modal_qr_howto: "📌 How to Use:",
+                modal_qr_steps: "1. Scan the QR code above with your camera.<br>2. View live seating status and estimated return times instantly.<br>3. Please arrive at the waiting area 10 minutes before your seating.",
+                btn_close: "Close",
+                btn_print: "Print",
+                btn_save: "Save Changes",
+                btn_add_row: "+ Add Row",
+                admin_panel_title: "Admin Panel & Event Management",
+                admin_panel_subtitle: "Manage past events, participant totals, and unique URLs per event",
+                admin_event_mgmt: "Event Archive & Creation",
+                admin_event_desc: "Save data independently per event. Click below to create a new tea ceremony session.",
+                btn_create_event: "+ Create New Event",
+                admin_current_event_label: "Current Event Unique URL:",
+                btn_copy_url: "Copy Dedicated URL",
+                btn_delete_event: "Delete This Event",
+                admin_csv_title: "📊 Export Participant & Summary Data",
+                admin_csv_desc: "Download all data including attendees and notes as a CSV file",
+                admin_general_title: "General Settings & Notice",
+                admin_lbl_title: "Event Title",
+                admin_lbl_announcement: "Notice from Organizers (leave blank to hide)",
+                admin_venue_title: "Main Venue Status Settings",
+                admin_lbl_vname: "Venue / Room Name",
+                admin_lbl_status: "Current Status",
+                admin_lbl_curgroup: "Current Seating Ticket Numbers",
+                admin_lbl_nextgroup: "Next Waiting Ticket Numbers",
+                admin_lbl_waitinginfo: "Waiting Area Announcement",
+                admin_lbl_note: "Status Note",
+                admin_sched_title: "Schedule, Attendees & Notes Editor",
+                admin_sched_desc: "Edit actual start times, attendees, and staff notes (*Attendees & notes are admin-only)"
+            },
+            zh: {
+                pageTitle: "茶会实时进度与返回时间参考看板",
+                subtitle: "持整理券者的实时入席状态与返回时间参考",
+                qr_btn: "接待用二维码与指南",
+                auto_update: "自动更新中",
+                admin_btn: "运营管理",
+                announcement_title: "运营公告",
+                rules_header: "给各位茶会参与者的温馨提示（请务必确认）",
+                rule_1: "・若显示<strong>“入席中”</strong>，即可立即入场（请在入席前<strong>10分钟</strong>到达等候区）。",
+                rule_2: "・一旦变为<strong>“点前中（泡茶中）”</strong>则会关门谢绝入场，需等待下一场次。",
+                rule_3: "・根据当日实际进度，<strong>开始和结束时间可能会有偏差（延迟或提前）</strong>，请务必留出充足时间返回。",
+                rule_4: "・根据现场拥堵情况与引导进度，<strong>叫号顺序可能会有所调整或前后变动</strong>。",
+                last_updated: "最后更新时间",
+                main_venue_tag: "主会场",
+                current_status: "当前状况",
+                waiting_title: "等候区指引（下一场次）",
+                waiting_default: "请在等候区休息等候",
+                schedule_header: "进行日程表（实际记录与返回参考）",
+                schedule_desc: "此处记录实际开始时间与状态，供您预估返回时间参考。",
+                col_session: "场次",
+                col_ticket: "整理券号",
+                col_starttime: "实际开始时间",
+                col_status: "当前状态",
+                footer_note: "无需手动刷新页面，系统将自动显示最新进度。",
+                modal_qr_title: "📱 接待用二维码与打印指南",
+                modal_qr_tag: "茶会实时进度",
+                modal_qr_desc: "请使用手机相机扫描下方二维码",
+                modal_qr_howto: "📌 使用方法:",
+                modal_qr_steps: "1. 使用相机扫描上方二维码。<br>2. 打开页面即可实时查看入席状态与返回时间。<br>3. 请在入席前10分钟到达等候区。",
+                btn_close: "关闭",
+                btn_print: "打印",
+                btn_save: "保存并应用更改",
+                btn_add_row: "+ 添加行",
+                admin_panel_title: "运营管理面板与活动管理",
+                admin_panel_subtitle: "管理历史活动、统计参会人数、生成各活动专属链接",
+                admin_event_mgmt: "活动存档与新建管理",
+                admin_event_desc: "可独立保存每场活动的数据。点击下方按钮可创建新的茶会或活动。",
+                btn_create_event: "+ 创建新活动",
+                admin_current_event_label: "当前活动专用URL:",
+                btn_copy_url: "复制专用网址",
+                btn_delete_event: "删除此活动",
+                admin_csv_title: "📊 导出参与者与统计数据",
+                admin_csv_desc: "可将包含人数与备注的完整数据导出为CSV文件",
+                admin_general_title: "通用设置与公告",
+                admin_lbl_title: "活动标题",
+                admin_lbl_announcement: "运营公告（留空则不显示）",
+                admin_venue_title: "主会场状态设置",
+                admin_lbl_vname: "茶室/会场名称",
+                admin_lbl_status: "当前状态",
+                admin_lbl_curgroup: "当前入席整理券号",
+                admin_lbl_nextgroup: "下一场等候整理券号",
+                admin_lbl_waitinginfo: "等候区公告说明",
+                admin_lbl_note: "状态备注",
+                admin_sched_title: "日程表、人数与备注编辑",
+                admin_sched_desc: "编辑实际开始时间、参会人数及内部备注（※人数与备注仅管理员可见）"
+            },
+            ko: {
+                pageTitle: "다도회 진행 상황 및 복귀 시간 안내 보드",
+                subtitle: "정리권 소지자를 위한 실시간 입장 상황 및 복귀 시간 안내",
+                qr_btn: "접수용 QR 및 안내문",
+                auto_update: "자동 업데이트 중",
+                admin_btn: "운영 관리",
+                announcement_title: "운영 공지사항",
+                rules_header: "다도회 참가자 여러분께 드리는 안내 말씀 (필독)",
+                rule_1: "・<strong>'입장 중'</strong> 표시인 경우 즉시 입장하실 수 있습니다 (입장 <strong>10분 전</strong>까지 대기 구역에 와주세요).",
+                rule_2: "・<strong>'다점 중(차 준비 중)'</strong>으로 변경되면 문이 닫혀 입장할 수 없으며 다음 회차까지 대기하셔야 합니다.",
+                rule_3: "・당일 진행 상황에 따라 <strong>시작 및 종료 시간에 지연이나 앞당겨짐이 발생할 수 있습니다</strong>. 여유 있게 돌아와 주세요.",
+                rule_4: "・혼잡 상황이나 유도 상황에 따라 <strong>호명 순서가 변경되거나 앞뒤로 바뀔 수 있습니다</strong>.",
+                last_updated: "최종 업데이트",
+                main_venue_tag: "메인 행사장",
+                current_status: "현재 상황",
+                waiting_title: "대기 구역 안내 (다음 회차)",
+                waiting_default: "대기 구역에서 기다려 주시기 바랍니다.",
+                schedule_header: "진행 스케줄 (실적 및 복귀 기준)",
+                schedule_desc: "실제 시작 시간과 상태를 기록하여 복귀 시간 예상을 돕습니다.",
+                col_session: "회차",
+                col_ticket: "정리권 번호",
+                col_starttime: "실제 시작 시간",
+                col_status: "현재 상태",
+                footer_note: "페이지를 새로고침하지 않아도 최신 진행 상황이 자동으로 표시됩니다.",
+                modal_qr_title: "📱 접수용 QR코드 및 인쇄 안내문",
+                modal_qr_tag: "다도회 진행 상황",
+                modal_qr_desc: "스마트폰 카메라로 QR코드를 스캔해 주세요",
+                modal_qr_howto: "📌 이용 방법:",
+                modal_qr_steps: "1. 카메라 앱으로 위의 QR코드를 스캔합니다.<br>2. 페이지가 열리면 현재 입장 상황과 복귀 예상 시간이 실시간으로 표시됩니다.<br>3. 입장 10분 전까지 대기 구역으로 와주세요.",
+                btn_close: "닫기",
+                btn_print: "인쇄하기",
+                btn_save: "변경사항 저장 및 반영",
+                btn_add_row: "+ 행 추가",
+                admin_panel_title: "운영진 관리 패널 및 이벤트 관리",
+                admin_panel_subtitle: "과거 이벤트 관리, 참가자 집계, 이벤트별 전용 URL 발급이 가능합니다",
+                admin_event_mgmt: "이벤트 아카이브 및 신규 생성 관리",
+                admin_event_desc: "이벤트별로 데이터를 독립적으로 저장할 수 있습니다. 새로운 다도회나 모임을 생성하려면 아래 버튼을 누르세요.",
+                btn_create_event: "+ 새 이벤트 만들기",
+                admin_current_event_label: "현재 관리 중인 이벤트 고유 URL:",
+                btn_copy_url: "전용 주소 복사",
+                btn_delete_event: "이 이벤트 삭제",
+                admin_csv_title: "📊 참가자 및 집계 데이터 내보내기",
+                admin_csv_desc: "참가자 수와 메모가 포함된 전체 데이터를 CSV 파일로 다운로드할 수 있습니다",
+                admin_general_title: "전체 설정 및 공지",
+                admin_lbl_title: "이벤트 타이틀",
+                admin_lbl_announcement: "운영 공지사항 (공란 시 미표시)",
+                admin_venue_title: "현재 메인석 상태 설정",
+                admin_lbl_vname: "다실/좌석명",
+                admin_lbl_status: "현재 상태",
+                admin_lbl_curgroup: "현재 입장 중인 정리권 번호",
+                admin_lbl_nextgroup: "대기 구역 안내할 다음 정리권 번호",
+                admin_lbl_waitinginfo: "대기 구역 안내 코멘트",
+                admin_lbl_note: "상황 메모",
+                admin_sched_title: "전체 스케줄 (실적, 인원, 메모) 편집",
+                admin_sched_desc: "실제 시작 시간, 참가 인원, 스태프용 메모를 입력할 수 있습니다 (*참가 인원과 메모는 관리자 전용)"
+            }
+        };
+
+        const STORAGE_PREFIX = "tea_ceremony_event_v5_";
+        const INDEX_KEY = "tea_ceremony_event_index_v5";
+        let currentLang = "ja";
+        let currentEventId = "default_event";
+
+        // Get list of all event IDs
+        function getEventIndex() {
+            const stored = localStorage.getItem(INDEX_KEY);
+            if (!stored) {
+                const initialIndex = ["default_event"];
+                localStorage.setItem(INDEX_KEY, JSON.stringify(initialIndex));
+                return initialIndex;
+            }
+            try {
+                return JSON.parse(stored);
+            } catch(e) {
+                return ["default_event"];
+            }
+        }
+
+        function saveEventIndex(indexArr) {
+            localStorage.setItem(INDEX_KEY, JSON.stringify(indexArr));
+        }
+
+        function getDefaultEventData() {
+            return {
+                id: "default_event",
+                eventTitle: "春のお茶会 進行状況ボード",
+                announcement: "本日はご来会いただき誠にありがとうございます。ただいま順次ご案内しております。",
+                venue: {
+                    name: "茶室：松風の間",
+                    status: "席入り中",
+                    currentGroup: "整理券 No. 1 〜 15",
+                    nextGroup: "整理券 No. 16 〜 30",
+                    waitingInfo: "待合スペースにお集まりください（10分前集合・順番前後あり）",
+                    note: "ただいまご入場いただけます。お早めにお越しください。"
+                },
+                schedule: [
+                    { session: "第1回", ticket: "整理券 No. 1 〜 15", startTime: "10:00 (予定通りの開始)", status: "終了", attendees: 15, memo: "定員通りスムーズに進行" },
+                    { session: "第2回", ticket: "整理券 No. 16 〜 30", startTime: "10:28 (+3分遅れ)", status: "進行中（席入り中）", attendees: 14, memo: "全員着席完了" },
+                    { session: "第3回", ticket: "整理券 No. 31 〜 45", startTime: "10:55 (予定)", status: "まもなく待合案内", attendees: 0, memo: "" },
+                    { session: "第4回", ticket: "整理券 No. 46 〜 60", startTime: "11:20 (予定)", status: "予定", attendees: 0, memo: "" },
+                    { session: "第5回", ticket: "整理券 No. 61 〜 75", startTime: "11:45 (予定)", status: "予定", attendees: 0, memo: "" }
+                ],
+                lastUpdated: new Date().toLocaleTimeString()
+            };
+        }
+
+        function getData(eventId = currentEventId) {
+            const stored = localStorage.getItem(STORAGE_PREFIX + eventId);
+            if (!stored) {
+                const def = getDefaultEventData();
+                def.id = eventId;
+                saveData(def);
+                return def;
+            }
+            try {
+                return JSON.parse(stored);
+            } catch(e) {
+                return getDefaultEventData();
+            }
+        }
+
+        function saveData(data) {
+            data.lastUpdated = new Date().toLocaleTimeString();
+            localStorage.setItem(STORAGE_PREFIX + data.id, JSON.stringify(data));
+        }
+
+        function initApp() {
+            // Check URL parameters for event ID (e.g., ?event=spring_2026)
+            const urlParams = new URLSearchParams(window.location.search);
+            const paramEvent = urlParams.get("event");
+            
+            const index = getEventIndex();
+            if (paramEvent && index.includes(paramEvent)) {
+                currentEventId = paramEvent;
+            } else {
+                currentEventId = index[0] || "default_event";
+            }
+
+            if (!localStorage.getItem(STORAGE_PREFIX + currentEventId)) {
+                saveData(getDefaultEventData());
+            }
+
+            updateEventSelectorDropdown();
+            detectLanguage();
+        }
+
+        function updateEventSelectorDropdown() {
+            const index = getEventIndex();
+            const selector = document.getElementById("eventSelector");
+            selector.innerHTML = "";
+
+            index.forEach(id => {
+                const evData = getData(id);
+                const opt = document.createElement("option");
+                opt.value = id;
+                opt.textContent = `📁 ${evData.eventTitle} (${id})`;
+                if (id === currentEventId) opt.selected = true;
+                selector.appendChild(opt);
+            });
+        }
+
+        function switchEvent(eventId) {
+            currentEventId = eventId;
+            // Update URL query parameter without reloading page
+            const url = new URL(window.location);
+            url.searchParams.set("event", eventId);
+            window.history.pushState({}, '', url);
+
+            renderView();
+            showToast("イベントを切り替えました");
+        }
+
+        function createNewEvent() {
+            const nameInput = document.getElementById("newEventNameInput");
+            const title = nameInput.value.trim() || ("新しいお茶会 " + new Date().toLocaleDateString());
+            const newId = "event_" + Math.random().toString(36).substring(2, 9);
+
+            const index = getEventIndex();
+            index.push(newId);
+            saveEventIndex(index);
+
+            const newObj = getDefaultEventData();
+            newObj.id = newId;
+            newObj.eventTitle = title;
+            saveData(newObj);
+
+            nameInput.value = "";
+            updateEventSelectorDropdown();
+            switchEvent(newId);
+            closeAdminModal();
+            showToast("新しいイベントを作成しました");
+        }
+
+        function deleteCurrentEvent() {
+            const index = getEventIndex();
+            if (index.length <= 1) {
+                alert("最後のイベントは削除できません。"); // Non-alert note: kept only as fallback guard
+                return;
+            }
+            if (confirm("このイベントデータを削除しますか？")) {
+                localStorage.removeItem(STORAGE_PREFIX + currentEventId);
+                const newIndex = index.filter(id => id !== currentEventId);
+                saveEventIndex(newIndex);
+                currentEventId = newIndex[0];
+                updateEventSelectorDropdown();
+                renderView();
+                closeAdminModal();
+                showToast("イベントを削除しました");
+            }
+        }
+
+        function copyEventUrl() {
+            const url = window.location.href.split('?')[0] + "?event=" + currentEventId;
+            const tempInput = document.createElement("input");
+            tempInput.value = url;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand("copy");
+            document.body.removeChild(tempInput);
+            showToast("イベント専用アドレスをコピーしました！");
+        }
+
+        function detectLanguage() {
+            const userLang = navigator.language || navigator.userLanguage;
+            if (userLang.startsWith("en")) currentLang = "en";
+            else if (userLang.startsWith("zh")) currentLang = "zh";
+            else if (userLang.startsWith("ko")) currentLang = "ko";
+            else currentLang = "ja";
+            
+            document.getElementById("langSelector").value = currentLang;
+            applyLanguage();
+        }
+
+        function changeLanguage(lang) {
+            currentLang = lang;
+            applyLanguage();
+        }
+
+        function applyLanguage() {
+            const dict = i18n[currentLang] || i18n.ja;
+            document.getElementById("pageTitleMeta").textContent = dict.pageTitle;
+            
+            // Translate static elements with data-i18n
+            document.querySelectorAll("[data-i18n]").forEach(el => {
+                const key = el.getAttribute("data-i18n");
+                if (dict[key]) {
+                    el.innerHTML = dict[key];
+                }
+            });
+            renderView();
+        }
+
+        // Render main public view (Attendees and notes are omitted here)
+        function renderView() {
+            const data = getData(currentEventId);
+
+            document.getElementById("eventTitleDisplay").textContent = data.eventTitle;
+            const annCard = document.getElementById("announcementCard");
+            const annText = document.getElementById("announcementText");
+            if (data.announcement && data.announcement.trim() !== "") {
+                annText.textContent = data.announcement;
+                annCard.classList.remove("hidden");
+            } else {
+                annCard.classList.add("hidden");
+            }
+
+            document.getElementById("lastUpdatedTime").textContent = data.lastUpdated;
+
+            const v = data.venue;
+            document.getElementById("mainVenueNameDisplay").textContent = v.name;
+
+            const badgeContainer = document.getElementById("mainStatusBadgeContainer");
+            const currentBox = document.getElementById("currentBox");
+            const currentGroupDisplay = document.getElementById("currentGroupDisplay");
+            const currentNoteDisplay = document.getElementById("currentNoteDisplay");
+            
+            document.getElementById("nextGroupDisplay").textContent = v.nextGroup;
+            document.getElementById("waitingInfoDisplay").textContent = v.waitingInfo;
+
+            if (v.status === "席入り中") {
+                badgeContainer.innerHTML = `<span class="px-3.5 py-1.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">🟢 席入り中（今すぐ入場可能）</span>`;
+                currentBox.className = "p-4 rounded-xl border bg-emerald-50/60 border-emerald-200 text-emerald-900";
+                currentGroupDisplay.textContent = v.currentGroup;
+                currentNoteDisplay.className = "text-xs mt-2 font-medium text-emerald-700 bg-white/80 p-2 rounded-lg border border-emerald-200/60";
+                currentNoteDisplay.textContent = "💡 " + v.note;
+            } else if (v.status === "お点前中") {
+                badgeContainer.innerHTML = `<span class="px-3.5 py-1.5 rounded-full text-xs font-bold bg-rose-100 text-rose-800 border border-rose-300">🔴 お点前中（入場締め切り・次回待機）</span>`;
+                currentBox.className = "p-4 rounded-xl border bg-rose-50/60 border-rose-200 text-rose-900";
+                currentGroupDisplay.textContent = v.currentGroup;
+                currentNoteDisplay.className = "text-xs mt-2 font-medium text-rose-700 bg-white/80 p-2 rounded-lg border border-rose-200/60";
+                currentNoteDisplay.textContent = "💡 " + v.note;
+            } else {
+                badgeContainer.innerHTML = `<span class="px-3.5 py-1.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-300">⏳ 片付け・準備中</span>`;
+                currentBox.className = "p-4 rounded-xl border bg-slate-50 border-slate-200 text-slate-800";
+                currentGroupDisplay.textContent = v.currentGroup;
+                currentNoteDisplay.className = "text-xs mt-2 font-medium text-slate-600 bg-white p-2 rounded-lg border border-slate-200";
+                currentNoteDisplay.textContent = "💡 " + v.note;
+            }
+
+            // Render Public Schedule Table (Attendees & Notes excluded)
+            const tbody = document.getElementById("scheduleTableBody");
+            tbody.innerHTML = "";
+
+            data.schedule.forEach(item => {
+                let statusBadgeStyle = "bg-slate-100 text-slate-600";
+                if (item.status.includes("進行中")) {
+                    statusBadgeStyle = "bg-emerald-100 text-emerald-800 font-bold";
+                } else if (item.status.includes("まもなく")) {
+                    statusBadgeStyle = "bg-amber-100 text-amber-800 font-bold";
+                } else if (item.status.includes("終了")) {
+                    statusBadgeStyle = "bg-slate-100 text-slate-400";
+                }
+
+                const row = document.createElement("tr");
+                row.className = "hover:bg-slate-50/80 transition";
+                row.innerHTML = `
+                    <td class="p-3 font-bold text-slate-800 text-xs sm:text-sm whitespace-nowrap">${escapeHtml(item.session)}</td>
+                    <td class="p-3 text-slate-900 font-medium text-xs sm:text-sm">${escapeHtml(item.ticket)}</td>
+                    <td class="p-3 text-slate-700 text-xs sm:text-sm font-mono">${escapeHtml(item.startTime)}</td>
+                    <td class="p-3"><span class="px-2.5 py-1 rounded-full text-xs ${statusBadgeStyle}">${escapeHtml(item.status)}</span></td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // QR Modal Functions
+        let qrCodeInstance = null;
+        function openQrModal() {
+            const url = window.location.href.split('?')[0] + "?event=" + currentEventId;
+            document.getElementById("currentUrlDisplay").textContent = url;
+            document.getElementById("flyerEventTitle").textContent = getData(currentEventId).eventTitle;
+
+            const qrContainer = document.getElementById("qrcode");
+            qrContainer.innerHTML = "";
+            qrCodeInstance = new QRCode(qrContainer, {
+                text: url,
+                width: 160,
+                height: 160,
+                colorDark: "#0f172a",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+
+            document.getElementById("qrModal").classList.remove("hidden");
+        }
+
+        function closeQrModal() {
+            document.getElementById("qrModal").classList.add("hidden");
+        }
+
+        // Admin Modal Functions
+        function openAdminModal() {
+            const data = getData(currentEventId);
+            document.getElementById("adminEventTitle").value = data.eventTitle;
+            document.getElementById("adminAnnouncement").value = data.announcement;
+
+            const v = data.venue;
+            document.getElementById("adminVenueName").value = v.name;
+            document.getElementById("adminVenueStatus").value = v.status;
+            document.getElementById("adminCurrentGroup").value = v.currentGroup;
+            document.getElementById("adminNextGroup").value = v.nextGroup;
+            document.getElementById("adminWaitingInfo").value = v.waitingInfo;
+            document.getElementById("adminVenueNote").value = v.note;
+
+            renderAdminSchedule(data.schedule);
+
+            document.getElementById("adminModal").classList.remove("hidden");
+        }
+
+        function closeAdminModal() {
+            document.getElementById("adminModal").classList.add("hidden");
+        }
+
+        function renderAdminSchedule(schedule) {
+            const container = document.getElementById("adminScheduleList");
+            container.innerHTML = "";
+
+            schedule.forEach((s, index) => {
+                const div = document.createElement("div");
+                div.className = "bg-white p-3 rounded-xl border border-slate-200 flex flex-col gap-2.5";
+                div.innerHTML = `
+                    <div class="flex flex-col sm:flex-row gap-2 items-center">
+                        <input type="text" data-s-field="session" data-s-index="${index}" value="${escapeHtml(s.session)}" placeholder="回数" class="w-full sm:w-1/4 px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs font-bold">
+                        <input type="text" data-s-field="ticket" data-s-index="${index}" value="${escapeHtml(s.ticket)}" placeholder="整理券番号" class="w-full sm:w-1/3 px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs">
+                        <input type="text" data-s-field="startTime" data-s-index="${index}" value="${escapeHtml(s.startTime)}" placeholder="開始時間・遅れ" class="w-full sm:w-5/12 px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs font-mono">
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-2 items-center justify-between">
+                        <div class="flex gap-2 w-full sm:w-3/4">
+                            <select data-s-field="status" data-s-index="${index}" class="w-1/2 px-2 py-1.5 border border-slate-300 rounded-lg text-xs font-medium">
+                                <option value="予定" ${s.status === "予定" ? "selected" : ""}>予定</option>
+                                <option value="まもなく待合案内" ${s.status === "まもなく待合案内" ? "selected" : ""}>まもなく待合</option>
+                                <option value="進行中（席入り中）" ${s.status === "進行中（席入り中）" ? "selected" : ""}>進行中</option>
+                                <option value="終了" ${s.status === "終了" ? "selected" : ""}>終了</option>
+                            </select>
+                            <input type="number" data-s-field="attendees" data-s-index="${index}" value="${s.attendees || 0}" placeholder="参加者数" class="w-1/4 px-2 py-1.5 border border-slate-300 rounded-lg text-xs">
+                            <input type="text" data-s-field="memo" data-s-index="${index}" value="${escapeHtml(s.memo || '')}" placeholder="スタッフ用メモ・コメント" class="w-1/2 px-2 py-1.5 border border-slate-300 rounded-lg text-xs">
+                        </div>
+                        <button onclick="removeSchedule(${index})" class="text-rose-500 hover:text-rose-700 text-xs font-bold px-2 py-1">削除</button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function addScheduleField() {
+            const data = getData(currentEventId);
+            const nextNum = data.schedule.length + 1;
+            data.schedule.push({
+                session: `第${nextNum}回`,
+                ticket: `整理券 No. --`,
+                startTime: "未定",
+                status: "予定",
+                attendees: 0,
+                memo: ""
+            });
+            renderAdminSchedule(data.schedule);
+        }
+
+        function removeSchedule(index) {
+            const data = getData(currentEventId);
+            data.schedule.splice(index, 1);
+            renderAdminSchedule(data.schedule);
+        }
+
+        function saveAdminData() {
+            const data = getData(currentEventId);
+            data.eventTitle = document.getElementById("adminEventTitle").value;
+            data.announcement = document.getElementById("adminAnnouncement").value;
+
+            data.venue = {
+                name: document.getElementById("adminVenueName").value,
+                status: document.getElementById("adminVenueStatus").value,
+                currentGroup: document.getElementById("adminCurrentGroup").value,
+                nextGroup: document.getElementById("adminNextGroup").value,
+                waitingInfo: document.getElementById("adminWaitingInfo").value,
+                note: document.getElementById("adminVenueNote").value
+            };
+
+            const scheduleBlocks = document.querySelectorAll("#adminScheduleList > div");
+            const newSchedule = [];
+            scheduleBlocks.forEach((b, i) => {
+                newSchedule.push({
+                    session: b.querySelector(`[data-s-field="session"][data-s-index="${i}"]`).value,
+                    ticket: b.querySelector(`[data-s-field="ticket"][data-s-index="${i}"]`).value,
+                    startTime: b.querySelector(`[data-s-field="startTime"][data-s-index="${i}"]`).value,
+                    status: b.querySelector(`[data-s-field="status"][data-s-index="${i}"]`).value,
+                    attendees: parseInt(b.querySelector(`[data-s-field="attendees"][data-s-index="${i}"]`).value) || 0,
+                    memo: b.querySelector(`[data-s-field="memo"][data-s-index="${i}"]`).value
+                });
+            });
+            data.schedule = newSchedule;
+
+            saveData(data);
+            updateEventSelectorDropdown();
+            closeAdminModal();
+            renderView();
+            showToast("設定を保存し、進行状況を更新しました");
+        }
+
+        function exportCsv() {
+            const data = getData(currentEventId);
+            let csv = "\ufeffイベント名,回数,対象整理券番号,実際の開始時間,ステータス,参加者数,スタッフ用メモ\n";
+            data.schedule.forEach(s => {
+                csv += `"${data.eventTitle}","${s.session}","${s.ticket}","${s.startTime}","${s.status}",${s.attendees || 0},"${(s.memo || "").replace(/"/g, '""')}"\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `tea_ceremony_${currentEventId}_report.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            showToast("CSVデータをダウンロードしました");
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById("toastNotification");
+            document.getElementById("toastMessage").textContent = message;
+            toast.classList.remove("translate-y-20", "opacity-0");
+            setTimeout(() => {
+                toast.classList.add("translate-y-20", "opacity-0");
+            }, 3000);
+        }
+
+        function escapeHtml(str) {
+            if (!str) return "";
+            return str.toString()
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        window.onload = function() {
+            initApp();
+        }
+    </script>
+</body>
+</html>
