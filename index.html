@@ -50,23 +50,22 @@
                 </div>
             </div>
 
-            <div class="flex items-center gap-2 flex-wrap justify-end w-full sm:w-auto">
+            <!-- Admin Controls Header (Hidden in View Mode) -->
+            <div id="headerAdminControls" class="flex items-center gap-2 flex-wrap justify-end w-full sm:w-auto">
+                <span id="roleBadge" class="text-xs bg-amber-500 text-white font-bold px-2.5 py-1 rounded shadow-xs flex items-center gap-1">
+                    👑 管理者モード
+                </span>
+
                 <!-- Event selector dropdown -->
                 <select id="eventSelector" onchange="switchEvent(this.value)" class="text-xs sm:text-sm bg-[#182b24] border border-[#c5a880]/60 rounded px-2.5 py-1.5 font-medium text-[#fcfbf7] outline-none cursor-pointer">
                     <option value="default-event">🌸 春のお茶会メイン</option>
-                </select>
-
-                <select id="langSelector" onchange="changeLanguage(this.value)" class="text-xs sm:text-sm bg-[#182b24] border border-[#c5a880]/60 rounded px-2.5 py-1.5 font-medium text-[#fcfbf7] outline-none cursor-pointer">
-                    <option value="ja">日本語</option>
-                    <option value="en">English</option>
-                    <option value="zh">中文</option>
                 </select>
 
                 <button onclick="openFlyerModal()" class="bg-[#c5a880] hover:bg-[#b0936b] text-[#1b3028] px-3 py-1.5 rounded text-xs sm:text-sm font-bold shadow transition flex items-center gap-1.5 font-mincho">
                     <span>🖨️</span> 受付QR・案内
                 </button>
 
-                <button onclick="openAdminModal()" class="bg-[#2c4a3e] hover:bg-[#1f352c] text-[#fcfbf7] border border-[#c5a880]/40 px-3 py-1.5 rounded text-xs sm:text-sm font-bold shadow transition flex items-center gap-1.5">
+                <button id="adminMenuBtn" onclick="openAdminModal()" class="bg-[#2c4a3e] hover:bg-[#1f352c] text-[#fcfbf7] border border-[#c5a880]/40 px-3 py-1.5 rounded text-xs sm:text-sm font-bold shadow transition flex items-center gap-1.5">
                     <span>⚙️</span> 運営管理
                 </button>
             </div>
@@ -82,8 +81,8 @@
                 <span id="syncStatusText" class="font-medium">クラウド同期準備中...</span>
             </div>
             <div class="flex items-center gap-3">
-                <button onclick="forceCloudSync()" class="no-print text-[11px] bg-[#2c4a3e] hover:bg-[#1f352c] text-white px-2.5 py-1 rounded font-bold transition flex items-center gap-1">
-                    <span>🔄</span> 手動同期
+                <button onclick="forceCloudSync()" class="no-print text-[11px] bg-[#2c4a3e] hover:bg-[#1f352c] text-white px-2.5 py-1 rounded font-bold transition flex items-center gap-1 admin-only">
+                    <span>🔄</span> クラウド同期
                 </button>
                 <div class="font-mono text-xs">
                     最終更新: <span id="lastUpdatedTime">--:--:--</span>
@@ -91,7 +90,7 @@
             </div>
         </div>
 
-        <!-- Announcement Alert Card (Hidden by default) -->
+        <!-- Announcement Alert Card -->
         <div id="announcementCard" class="hidden bg-amber-50 border-l-4 border-amber-600 p-4 rounded-r-lg shadow-sm">
             <div class="flex items-start gap-3">
                 <span class="text-xl">📢</span>
@@ -121,7 +120,7 @@
 
                 <div class="bg-[#fcfbf7] p-3.5 rounded-lg border border-[#e8e2d5] flex items-center justify-between">
                     <div>
-                        <div class="text-[11px] text-[#736a5c] font-medium">ご案内中の対象</div>
+                        <div class="text-[11px] text-[#736a5c] font-medium">ご案内中の対象番号</div>
                         <div class="text-xl font-mono font-bold text-[#2c4a3e]" id="currentTicketDisplay">No. 1〜15</div>
                     </div>
                     <div class="text-right">
@@ -170,11 +169,11 @@
                     <thead class="bg-[#fcfbf7] text-[#736a5c] uppercase text-[11px] border-b border-[#e8e2d5]">
                         <tr>
                             <th class="p-3">席次</th>
-                            <th class="p-3">対象 No.</th>
+                            <th class="p-3">No. (対象番号)</th>
                             <th class="p-3">予定開始</th>
                             <th class="p-3">定員</th>
                             <th class="p-3">状態</th>
-                            <th class="p-3 no-print">操作</th>
+                            <th class="p-3 admin-only">クイック操作</th>
                         </tr>
                     </thead>
                     <tbody id="scheduleTableBody" class="divide-y divide-[#e8e2d5]">
@@ -194,6 +193,21 @@
                     <span>⚙️</span> 運営管理・進行コントロール
                 </h3>
                 <button onclick="closeAdminModal()" class="text-gray-400 hover:text-gray-700 text-xl font-bold">&times;</button>
+            </div>
+
+            <!-- Firebase Cloud Config Section for Custom Deployments -->
+            <div class="bg-[#f4f0e6] p-3.5 rounded-lg border border-[#c5a880]/50 space-y-2">
+                <div class="flex justify-between items-center">
+                    <label class="block text-xs font-bold text-[#1b3028] flex items-center gap-1">
+                        <span>☁️</span> クラウド同期設定 (Firebase Config)
+                    </label>
+                    <span id="cloudConfigStatusBadge" class="text-[10px] px-2 py-0.5 rounded font-bold bg-amber-100 text-amber-800">未設定</span>
+                </div>
+                <p class="text-[11px] text-[#736a5c]">
+                    GitHub Pages等の独自ドメインで複数端末リアルタイム共有を行う場合、Firebaseプロジェクトの「firebaseConfig」JSONをここに保存してください。
+                </p>
+                <textarea id="adminFirebaseConfigInput" rows="3" placeholder='{"apiKey": "...", "authDomain": "...", "projectId": "...", ...}' class="w-full border border-[#d6cebe] rounded px-2.5 py-1.5 text-[11px] font-mono bg-white"></textarea>
+                <button onclick="saveFirebaseConfigCustom()" class="bg-[#1b3028] hover:bg-[#182b24] text-white px-3 py-1 rounded text-xs font-bold transition">クラウド接続設定を保存</button>
             </div>
 
             <!-- Create New Event Quick Section -->
@@ -216,7 +230,6 @@
                         <label class="block font-bold text-[#1b3028] mb-1">開催日選択</label>
                         <input type="date" id="adminEventDatePicker" onchange="syncDateFromPicker(this.value)" class="w-full border border-[#d6cebe] rounded px-3 py-1.5 text-xs">
                         <input type="text" id="adminEventDateInput" placeholder="表示用テキスト (例: 2026年4月15日(土))" class="w-full border border-[#d6cebe] rounded px-3 py-1.5 mt-1 text-xs">
-                        <!-- Quick Date Preset List -->
                         <div class="flex flex-wrap gap-1 mt-1.5">
                             <button type="button" onclick="setPresetDate('today')" class="bg-[#f0ece1] hover:bg-[#e4ddcc] text-[#595247] px-2 py-0.5 rounded text-[10px] font-bold">今日</button>
                             <button type="button" onclick="setPresetDate('tomorrow')" class="bg-[#f0ece1] hover:bg-[#e4ddcc] text-[#595247] px-2 py-0.5 rounded text-[10px] font-bold">明日</button>
@@ -232,8 +245,8 @@
 
                 <div>
                     <label class="block font-bold text-[#1b3028] mb-1">公開ウェブサイトURL（QRコード・共有用）</label>
-                    <input type="url" id="adminBaseUrlInput" placeholder="例: https://your-domain.com/tea/" class="w-full border border-[#d6cebe] rounded px-3 py-2 font-mono text-xs">
-                    <p class="text-[10px] text-[#736a5c] mt-1">※WebサーバーやGitHub Pagesにアップロードした後のページのURLを入力してください。</p>
+                    <input type="url" id="adminBaseUrlInput" placeholder="例: https://your-username.github.io/repository-name/" class="w-full border border-[#d6cebe] rounded px-3 py-2 font-mono text-xs">
+                    <p class="text-[10px] text-[#736a5c] mt-1">※GitHub Pages等で公開したページのURLを設定してください。</p>
                 </div>
 
                 <div>
@@ -241,17 +254,16 @@
                     <textarea id="adminAnnouncementInput" rows="2" class="w-full border border-[#d6cebe] rounded px-3 py-2" placeholder="例: ただいま本日最後のご案内を行っております。"></textarea>
                 </div>
 
-                <!-- Auto calculate schedule times & Preset Selection -->
+                <!-- Auto calculate schedule times -->
                 <div class="bg-[#f4f0e6] p-3.5 rounded-lg space-y-3 border border-[#d6cebe]">
                     <div class="font-bold text-[#1b3028] text-xs flex items-center gap-1">
-                        <span>⏱️</span> スケジュール・席順一括自動計算（ダイアログ選択）
+                        <span>⏱️</span> スケジュール・時刻一括自動計算
                     </div>
                     
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
                         <div>
                             <label class="block text-[10px] font-bold text-[#736a5c] mb-0.5">開始時刻</label>
                             <input type="time" id="autoStartHourInput" value="10:00" class="w-full border border-[#d6cebe] rounded px-2 py-1 font-mono text-xs bg-white">
-                            <!-- Preset Time Chips -->
                             <div class="flex flex-wrap gap-1 mt-1">
                                 <button type="button" onclick="setPresetTime('09:00')" class="bg-white hover:bg-gray-100 border text-[#595247] px-1.5 py-0.5 rounded text-[9px] font-mono">09:00</button>
                                 <button type="button" onclick="setPresetTime('10:00')" class="bg-white hover:bg-gray-100 border text-[#595247] px-1.5 py-0.5 rounded text-[9px] font-mono">10:00</button>
@@ -261,12 +273,10 @@
                         <div>
                             <label class="block text-[10px] font-bold text-[#736a5c] mb-0.5">1席の所要時間(分)</label>
                             <input type="number" id="autoIntervalMinutes" value="35" class="w-full border border-[#d6cebe] rounded px-2 py-1 font-mono text-xs bg-white">
-                            <!-- Preset Minutes Chips -->
                             <div class="flex flex-wrap gap-1 mt-1">
                                 <button type="button" onclick="setPresetInterval(30)" class="bg-white hover:bg-gray-100 border text-[#595247] px-1.5 py-0.5 rounded text-[9px]">30分</button>
                                 <button type="button" onclick="setPresetInterval(35)" class="bg-white hover:bg-gray-100 border text-[#595247] px-1.5 py-0.5 rounded text-[9px]">35分</button>
                                 <button type="button" onclick="setPresetInterval(40)" class="bg-white hover:bg-gray-100 border text-[#595247] px-1.5 py-0.5 rounded text-[9px]">40分</button>
-                                <button type="button" onclick="setPresetInterval(45)" class="bg-white hover:bg-gray-100 border text-[#595247] px-1.5 py-0.5 rounded text-[9px]">45分</button>
                             </div>
                         </div>
                         <div>
@@ -340,7 +350,7 @@
 
                 <div class="bg-[#fcfbf7] p-2.5 rounded border border-[#e8e2d5] space-y-2 text-left">
                     <div class="flex justify-between items-center">
-                        <span class="text-[10px] text-[#736a5c] font-bold">ご案内・共有用URL</span>
+                        <span class="text-[10px] text-[#736a5c] font-bold">ご案内・共有用URL (閲覧専用)</span>
                         <button onclick="toggleEditBaseUrl()" class="text-[10px] text-[#2c4a3e] hover:underline font-bold">✏️ URL変更・設定</button>
                     </div>
                     
@@ -382,8 +392,13 @@
         let currentUser = null;
         let unsubscribe = null;
         let isCloudMode = false;
+        
+        // Default mode is Admin
+        let isAdmin = true;
         let currentEventId = "default-event";
         let availableEventIds = ["default-event"];
+
+        const defaultAppId = typeof __app_id !== 'undefined' ? __app_id : "tea-ceremony-app";
 
         let appData = {
             eventTitle: "春のお茶会メイン",
@@ -406,119 +421,103 @@
             ]
         };
 
+        // Helper to safely set element text content
+        function setText(id, value) {
+            const el = document.getElementById(id);
+            if (el) el.textContent = value;
+        }
+
         function getShareableUrl() {
-            if (appData.baseUrl && appData.baseUrl.trim() !== "") {
-                let base = appData.baseUrl.trim();
-                if (!base.startsWith("http://") && !base.startsWith("https://")) {
-                    base = "https://" + base;
-                }
-                try {
-                    const u = new URL(base);
-                    u.searchParams.set("event", currentEventId);
-                    return u.toString();
-                } catch (e) {
-                    const sep = base.includes("?") ? "&" : "?";
-                    return base + sep + "event=" + encodeURIComponent(currentEventId);
-                }
+            let base = appData.baseUrl && appData.baseUrl.trim() !== "" ? appData.baseUrl.trim() : window.location.href;
+            if (!base.startsWith("http://") && !base.startsWith("https://")) {
+                base = "https://" + base;
             }
-
-            let shareUrl = window.location.href;
-            if (shareUrl.includes("blob:") || shareUrl.includes("about:") || shareUrl.includes("file:")) {
-                return "https://(公開先のURLを「URL変更・設定」で設定してください)?event=" + encodeURIComponent(currentEventId);
+            try {
+                const u = new URL(base);
+                u.searchParams.set("event", currentEventId);
+                u.searchParams.set("mode", "view"); // Force view mode for generated URL/QR
+                return u.toString();
+            } catch (e) {
+                const sep = base.includes("?") ? "&" : "?";
+                return base + sep + "event=" + encodeURIComponent(currentEventId) + "&mode=view";
             }
-            return shareUrl;
         }
 
-        function setText(id, text) {
-            const el = document.getElementById(id);
-            if (el) el.innerText = text;
-        }
-
-        function setHTML(id, html) {
-            const el = document.getElementById(id);
-            if (el) el.innerHTML = html;
-        }
-
-        function getAppId() {
-            return typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        function getFirebaseConfig() {
+            if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+                return typeof __firebase_config === 'string' ? JSON.parse(__firebase_config) : __firebase_config;
+            }
+            const saved = localStorage.getItem('teaceremony_custom_firebase_config');
+            if (saved) {
+                try { return JSON.parse(saved); } catch (e) {}
+            }
+            return null;
         }
 
         function getEventDocRef(eventId) {
-            // Strict public path: /artifacts/{appId}/public/data/events/{eventId}
-            return doc(db, 'artifacts', getAppId(), 'public', 'data', 'events', eventId);
+            if (!db) return null;
+            return doc(db, 'artifacts', defaultAppId, 'public_data', eventId);
         }
 
         function getMetaDocRef() {
-            // Strict public path: /artifacts/{appId}/public/data/events/events_meta
-            return doc(db, 'artifacts', getAppId(), 'public', 'data', 'events', 'events_meta');
+            if (!db) return null;
+            return doc(db, 'artifacts', defaultAppId, 'public_data', '_events_meta');
         }
 
-        window.syncDateFromPicker = function(dateVal) {
-            if (!dateVal) return;
-            const d = new Date(dateVal);
-            const days = ['日', '月', '火', '水', '木', '金', '土'];
-            const formatted = `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日(${days[d.getDay()]})`;
-            const dateInput = document.getElementById('adminEventDateInput');
-            if (dateInput) dateInput.value = formatted;
-        };
+        window.updateRoleUI = function() {
+            const headerControls = document.getElementById('headerAdminControls');
+            const adminElements = document.querySelectorAll('.admin-only');
 
-        window.setPresetDate = function(presetType) {
-            const now = new Date();
-            let target = new Date();
-            
-            if (presetType === 'today') {
-                target = now;
-            } else if (presetType === 'tomorrow') {
-                target.setDate(now.getDate() + 1);
-            } else if (presetType === 'sat') {
-                const day = now.getDay();
-                const diff = (6 - day + 7) % 7;
-                target.setDate(now.getDate() + diff);
-            } else if (presetType === 'sun') {
-                const day = now.getDay();
-                const diff = (0 - day + 7) % 7;
-                target.setDate(now.getDate() + (diff === 0 ? 7 : diff));
+            if (isAdmin) {
+                if (headerControls) headerControls.classList.remove('hidden');
+                adminElements.forEach(el => el.classList.remove('hidden'));
+            } else {
+                // In View Mode, completely hide the header buttons & badges
+                if (headerControls) headerControls.classList.add('hidden');
+                adminElements.forEach(el => el.classList.add('hidden'));
             }
-
-            const yyyy = target.getFullYear();
-            const mm = String(target.getMonth() + 1).padStart(2, '0');
-            const dd = String(target.getDate()).padStart(2, '0');
-            const iso = `${yyyy}-${mm}-${dd}`;
-
-            const picker = document.getElementById('adminEventDatePicker');
-            if (picker) picker.value = iso;
-            window.syncDateFromPicker(iso);
         };
 
-        window.setPresetTime = function(timeStr) {
-            const el = document.getElementById('autoStartHourInput');
-            if (el) el.value = timeStr;
+        window.saveFirebaseConfigCustom = function() {
+            const val = document.getElementById('adminFirebaseConfigInput').value.trim();
+            if (!val) {
+                localStorage.removeItem('teaceremony_custom_firebase_config');
+                showToast("Firebase設定を消去しました");
+                location.reload();
+                return;
+            }
+            try {
+                JSON.parse(val);
+                localStorage.setItem('teaceremony_custom_firebase_config', val);
+                showToast("☁️ Firebase接続設定を保存しました。再読み込みします...");
+                setTimeout(() => location.reload(), 1000);
+            } catch(e) {
+                showToast("❌ 無効なJSON形式です");
+            }
         };
 
-        window.setPresetInterval = function(mins) {
-            const el = document.getElementById('autoIntervalMinutes');
-            if (el) el.value = mins;
-        };
-
-        window.setPresetAttendees = function(count) {
-            const el = document.getElementById('autoAttendeesPerSession');
-            if (el) el.value = count;
-        };
-
-        // Initialize App on DOM Content Loaded
         window.addEventListener('DOMContentLoaded', async () => {
             const urlParams = new URLSearchParams(window.location.search);
             const evParam = urlParams.get('event');
-            if (evParam) {
-                currentEventId = evParam;
+            const modeParam = urlParams.get('mode');
+
+            if (evParam) currentEventId = evParam;
+            
+            // Only set to View mode if explicitly requested via mode=view
+            if (modeParam === 'view') {
+                isAdmin = false;
+            } else {
+                isAdmin = true;
             }
 
+            window.updateRoleUI();
             loadLocalEventIds();
 
+            const fbConfig = getFirebaseConfig();
+
             try {
-                if (typeof __firebase_config !== 'undefined' && __firebase_config) {
-                    const firebaseConfig = JSON.parse(__firebase_config);
-                    app = initializeApp(firebaseConfig);
+                if (fbConfig) {
+                    app = initializeApp(fbConfig);
                     db = getFirestore(app);
                     auth = getAuth(app);
                     
@@ -531,9 +530,15 @@
                         currentUser = userCred.user;
                     }
 
-                    await syncEventsMetaAndStart();
+                    const cfgStatus = document.getElementById('cloudConfigStatusBadge');
+                    if (cfgStatus) {
+                        cfgStatus.className = "text-[10px] px-2 py-0.5 rounded font-bold bg-emerald-100 text-emerald-800";
+                        cfgStatus.innerText = "クラウド設定済み";
+                    }
+
+                    await setupCloudSync();
                 } else {
-                    setText('syncStatusText', "📱 ローカル保存モード (クラウド未設定)");
+                    setText('syncStatusText', "⚠️ クラウド未接続 (ローカル保存モード)");
                     const dot = document.getElementById('syncStatusDot');
                     if (dot) dot.className = "w-2.5 h-2.5 rounded-full bg-amber-500";
                     loadLocalStorageData();
@@ -541,7 +546,7 @@
                 }
             } catch (e) {
                 console.warn("Initialization fallback to local mode:", e);
-                setText('syncStatusText', "⚠️ ローカルモード (オフライン)");
+                setText('syncStatusText', "⚠️ クラウド同期エラー (ローカル表示中)");
                 const dot = document.getElementById('syncStatusDot');
                 if (dot) dot.className = "w-2.5 h-2.5 rounded-full bg-amber-500";
                 loadLocalStorageData();
@@ -551,94 +556,103 @@
             updateUrlDisplay();
         });
 
-        function loadLocalEventIds() {
-            availableEventIds = ["default-event"];
-            for (let i = 0; i < localStorage.length; i++) {
-                const k = localStorage.key(i);
-                if (k && k.startsWith("teaceremony_") && k !== "teaceremony_events_meta") {
-                    const evId = k.replace("teaceremony_", "");
-                    if (!availableEventIds.includes(evId)) {
-                        availableEventIds.push(evId);
-                    }
-                }
-            }
-            if (!availableEventIds.includes(currentEventId)) {
-                availableEventIds.push(currentEventId);
-            }
-            updateEventSelectorOptions();
-        }
+        async function setupCloudSync() {
+            if (!db) return;
+            isCloudMode = true;
 
-        async function syncEventsMetaAndStart() {
-            if (!db || !auth || !auth.currentUser) return;
-            const metaRef = getMetaDocRef();
-            
             try {
-                const docSnap = await getDoc(metaRef);
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    if (data.ids && Array.isArray(data.ids)) {
-                        data.ids.forEach(id => {
-                            if (!availableEventIds.includes(id)) availableEventIds.push(id);
-                        });
-                    }
-                } else {
-                    await setDoc(metaRef, { ids: availableEventIds }).catch(err => console.warn("Meta init write error:", err));
-                }
-            } catch (err) {
-                console.warn("Could not sync meta doc:", err);
-            }
-
-            updateEventSelectorOptions();
-            setupRealtimeListener();
-        }
-
-        function setupRealtimeListener() {
-            if (!db || !auth || !auth.currentUser) return;
-            const docRef = getEventDocRef(currentEventId);
-            
-            if (unsubscribe) unsubscribe();
-            
-            try {
-                unsubscribe = onSnapshot(docRef, (docSnap) => {
-                    if (docSnap.exists()) {
-                        const serverData = docSnap.data();
-                        appData = Object.assign({}, appData, serverData);
-                        isCloudMode = true;
-                        setText('syncStatusText', "☁️ クラウド同期中 (リアルタイム接続完了)");
-                        const dot = document.getElementById('syncStatusDot');
-                        if (dot) dot.className = "w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse";
-                        saveLocalStorageData();
+                const metaRef = getMetaDocRef();
+                if (metaRef) {
+                    const metaSnap = await getDoc(metaRef);
+                    if (metaSnap.exists()) {
+                        const meta = metaSnap.data();
+                        if (meta && Array.isArray(meta.eventList)) {
+                            availableEventIds = meta.eventList;
+                            updateEventSelectorOptions();
+                        }
                     } else {
-                        loadLocalStorageData();
-                        setDoc(docRef, appData).then(() => {
-                            isCloudMode = true;
-                            setText('syncStatusText', "☁️ クラウド保存完了 (新規登録)");
-                            const dot = document.getElementById('syncStatusDot');
-                            if (dot) dot.className = "w-2.5 h-2.5 rounded-full bg-emerald-500";
-                        }).catch((err) => {
-                            console.warn("Cloud initial write failed:", err);
-                            isCloudMode = false;
-                            setText('syncStatusText', "⚠️ ローカル保存中 (クラウド書き込み不可)");
-                            const dot = document.getElementById('syncStatusDot');
-                            if (dot) dot.className = "w-2.5 h-2.5 rounded-full bg-amber-500";
-                        });
+                        await setDoc(metaRef, { eventList: availableEventIds }, { merge: true });
                     }
-                    renderAll();
-                }, (error) => {
-                    console.warn("Snapshot error:", error);
-                    isCloudMode = false;
-                    setText('syncStatusText', "⚠️ ローカル保存モード (クラウド未接続)");
+                }
+            } catch (e) {
+                console.warn("Metadata sync fallback:", e);
+            }
+
+            subscribeToEvent(currentEventId);
+        }
+
+        function subscribeToEvent(eventId) {
+            if (unsubscribe) unsubscribe();
+            const docRef = getEventDocRef(eventId);
+            if (!docRef) return;
+
+            unsubscribe = onSnapshot(docRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    appData = Object.assign({}, appData, docSnap.data());
+                    setText('syncStatusText', "🟢 クラウド同期中 (リアルタイム連動)");
                     const dot = document.getElementById('syncStatusDot');
-                    if (dot) dot.className = "w-2.5 h-2.5 rounded-full bg-amber-500";
-                    loadLocalStorageData();
+                    if (dot) dot.className = "w-2.5 h-2.5 rounded-full bg-emerald-600 animate-pulse";
+                    setText('lastUpdatedTime', new Date().toLocaleTimeString('ja-JP'));
                     renderAll();
-                });
-            } catch (err) {
-                console.warn("Listener setup error:", err);
-                isCloudMode = false;
+                } else {
+                    saveToCloudOrLocal();
+                }
+            }, (err) => {
+                console.warn("Snapshot subscription warning:", err);
+                setText('syncStatusText', "⚠️ クラウド同期接続待ち (ローカルキャッシュ参照中)");
+                const dot = document.getElementById('syncStatusDot');
+                if (dot) dot.className = "w-2.5 h-2.5 rounded-full bg-amber-500";
                 loadLocalStorageData();
                 renderAll();
+            });
+        }
+
+        window.forceCloudSync = async function() {
+            await saveToCloudOrLocal();
+            showToast("🔄 最新データを手動同期しました");
+        };
+
+        async function saveToCloudOrLocal() {
+            localStorage.setItem('teaceremony_data_' + currentEventId, JSON.stringify(appData));
+            localStorage.setItem('teaceremony_event_ids', JSON.stringify(availableEventIds));
+
+            if (isCloudMode && db) {
+                try {
+                    const docRef = getEventDocRef(currentEventId);
+                    if (docRef) {
+                        await setDoc(docRef, appData, { merge: true });
+                    }
+                    const metaRef = getMetaDocRef();
+                    if (metaRef) {
+                        await setDoc(metaRef, { eventList: availableEventIds }, { merge: true });
+                    }
+                    setText('syncStatusText', "🟢 クラウド同期完了");
+                    setText('lastUpdatedTime', new Date().toLocaleTimeString('ja-JP'));
+                } catch (e) {
+                    console.warn("Cloud save warning:", e);
+                }
             }
+            renderAll();
+        }
+
+        function loadLocalStorageData() {
+            const saved = localStorage.getItem('teaceremony_data_' + currentEventId);
+            if (saved) {
+                try { appData = Object.assign({}, appData, JSON.parse(saved)); } catch (e) {}
+            }
+        }
+
+        function loadLocalEventIds() {
+            const saved = localStorage.getItem('teaceremony_event_ids');
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        availableEventIds = parsed;
+                    }
+                } catch (e) {}
+            }
+            updateEventSelectorOptions();
         }
 
         function updateEventSelectorOptions() {
@@ -648,124 +662,103 @@
             availableEventIds.forEach(id => {
                 const opt = document.createElement('option');
                 opt.value = id;
-                opt.innerText = id === 'default-event' ? '🌸 春のお茶会メイン' : `🍵 イベント: ${id}`;
+                opt.textContent = id === "default-event" ? "🌸 春のお茶会メイン" : `🍵 ${id}`;
                 if (id === currentEventId) opt.selected = true;
                 selector.appendChild(opt);
             });
         }
 
-        window.switchEvent = function(newEventId) {
-            if (!newEventId) return;
-            const newUrl = window.location.origin + window.location.pathname + '?event=' + encodeURIComponent(newEventId);
-            window.location.href = newUrl;
+        window.switchEvent = function(eventId) {
+            currentEventId = eventId;
+            loadLocalStorageData();
+            if (isCloudMode) {
+                subscribeToEvent(currentEventId);
+            }
+            renderAll();
+            showToast(`イベント「${eventId}」に切り替えました`);
         };
 
         window.createNewEvent = function() {
-            const inputEl = document.getElementById('newEventNameInput');
-            const nameInput = inputEl ? inputEl.value.trim() : '';
-            if (!nameInput) {
+            const input = document.getElementById('newEventNameInput');
+            if (!input) return;
+            const name = input.value.trim();
+            if (!name) {
                 showToast("イベント名を入力してください");
                 return;
             }
-            const newId = nameInput.replace(/[^a-zA-Z0-9_\u3000-\u9faf]/g, '_') + '_' + Math.floor(Math.random() * 1000);
-            
+            const newId = name.replace(/\s+/g, '-');
             if (!availableEventIds.includes(newId)) {
                 availableEventIds.push(newId);
             }
-
-            appData.eventTitle = nameInput;
-            appData.schedule = [
-                { id: "第1席", ticket: "No. 1〜15", startTime: "10:00", attendees: 15, status: "席入り中" }
-            ];
-
-            saveLocalStorageData();
-
-            if (db && auth && auth.currentUser) {
-                const metaRef = getMetaDocRef();
-                setDoc(metaRef, { ids: availableEventIds }, { merge: true }).catch(err => console.warn(err));
-
-                const newDocRef = getEventDocRef(newId);
-                setDoc(newDocRef, appData).then(() => {
-                    showToast("☁️ 新しいイベントをクラウドに作成しました");
-                    setTimeout(() => {
-                        window.switchEvent(newId);
-                    }, 400);
-                }).catch((err) => {
-                    console.warn("Cloud save error:", err);
-                    window.switchEvent(newId);
-                });
-            } else {
-                window.switchEvent(newId);
-            }
+            currentEventId = newId;
+            appData.eventTitle = name;
+            input.value = '';
+            updateEventSelectorOptions();
+            saveToCloudOrLocal();
+            if (isCloudMode) subscribeToEvent(currentEventId);
+            showToast(`新しいイベント「${name}」を作成して切替えました！`);
         };
 
         window.deleteCurrentEvent = function() {
             if (availableEventIds.length <= 1) {
-                showToast("最後のイベントは削除できません");
+                showToast("最後の1つのイベントは削除できません");
                 return;
             }
-            if (confirm("本当にこのイベントデータを削除しますか？")) {
-                const idx = availableEventIds.indexOf(currentEventId);
-                if (idx > -1) availableEventIds.splice(idx, 1);
-                
-                localStorage.removeItem(`teaceremony_${currentEventId}`);
-
-                if (db && auth && auth.currentUser) {
-                    const metaRef = getMetaDocRef();
-                    setDoc(metaRef, { ids: availableEventIds }, { merge: true }).catch(err => console.warn(err));
-                }
-                window.switchEvent(availableEventIds[0]);
+            if (confirm(`イベント「${currentEventId}」を削除してもよろしいですか？`)) {
+                availableEventIds = availableEventIds.filter(id => id !== currentEventId);
+                currentEventId = availableEventIds[0];
+                updateEventSelectorOptions();
+                loadLocalStorageData();
+                saveToCloudOrLocal();
+                if (isCloudMode) subscribeToEvent(currentEventId);
+                showToast("イベントを削除しました");
             }
         };
-
-        window.forceCloudSync = function() {
-            saveToCloudOrLocal(true);
-        };
-
-        function saveToCloudOrLocal(manualTrigger = false) {
-            appData.lastUpdated = new Date().toLocaleTimeString();
-            saveLocalStorageData();
-
-            if (db && auth && auth.currentUser) {
-                const docRef = getEventDocRef(currentEventId);
-                setDoc(docRef, appData).then(() => {
-                    setText('syncStatusText', "☁️ クラウド同期完了 (" + appData.lastUpdated + ")");
-                    const dot = document.getElementById('syncStatusDot');
-                    if (dot) dot.className = "w-2.5 h-2.5 rounded-full bg-emerald-500";
-                    if (manualTrigger) showToast("☁️ クラウドに正常に同期・保存されました");
-                }).catch((err) => {
-                    console.warn("Save error:", err);
-                    setText('syncStatusText', "⚠️ ローカル保存のみ (クラウド失敗)");
-                    const dot = document.getElementById('syncStatusDot');
-                    if (dot) dot.className = "w-2.5 h-2.5 rounded-full bg-amber-500";
-                    if (manualTrigger) showToast("⚠️ クラウド保存に失敗しました（ローカルに保存完了）");
-                });
-            } else {
-                if (manualTrigger) showToast("💾 ローカルに保存しました");
-            }
-            renderAll();
-        }
-
-        function loadLocalStorageData() {
-            const saved = localStorage.getItem(`teaceremony_${currentEventId}`);
-            if (saved) {
-                try { appData = JSON.parse(saved); } catch (e) {}
-            }
-        }
-
-        function saveLocalStorageData() {
-            localStorage.setItem(`teaceremony_${currentEventId}`, JSON.stringify(appData));
-        }
 
         function renderAll() {
             setText('eventTitleDisplay', appData.eventTitle || 'お茶会');
-            setHTML('eventDateDisplay', `📅 ${appData.eventDate || ''}`);
+            setText('eventDateDisplay', '📅 ' + (appData.eventDate || ''));
+            setText('mainVenueNameDisplay', appData.venueName || '茶室');
             setText('flyerEventTitle', appData.eventTitle || 'お茶会');
-            
+
+            let activeItem = appData.schedule.find(s => s.status === '席入り中' || s.status === 'お点前中');
+            if (!activeItem && appData.schedule.length > 0) activeItem = appData.schedule[0];
+
+            if (activeItem) {
+                setText('currentSessionDisplay', activeItem.id);
+                setText('currentTicketDisplay', activeItem.ticket);
+                setText('currentStartTimeBadge', '予定開始: ' + activeItem.startTime);
+
+                const badgeContainer = document.getElementById('mainStatusBadgeContainer');
+                if (badgeContainer) {
+                    if (activeItem.status === 'お点前中') {
+                        badgeContainer.innerHTML = '<span class="bg-rose-700 text-white px-3 py-1 rounded-full text-xs font-bold shadow-xs">🔴 お点前中</span>';
+                    } else if (activeItem.status === '終了') {
+                        badgeContainer.innerHTML = '<span class="bg-gray-400 text-white px-3 py-1 rounded-full text-xs font-bold shadow-xs">⚪ 本日終了</span>';
+                    } else {
+                        badgeContainer.innerHTML = '<span class="bg-[#2c4a3e] text-white px-3 py-1 rounded-full text-xs font-bold shadow-xs">🟢 席入り中</span>';
+                    }
+                }
+            }
+
+            let activeIndex = appData.schedule.findIndex(s => s.id === (activeItem ? activeItem.id : ''));
+            let nextItem = (activeIndex >= 0 && activeIndex + 1 < appData.schedule.length) ? appData.schedule[activeIndex + 1] : null;
+
+            if (nextItem) {
+                setText('nextGroupDisplay', nextItem.id);
+                setText('nextTicketDisplay', `${nextItem.ticket} (予定 ${nextItem.startTime})`);
+            } else {
+                setText('nextGroupDisplay', 'なし');
+                setText('nextTicketDisplay', '本日のご案内は終了しました');
+            }
+
+            setText('currentNoteDisplay', appData.currentNote || 'まもなくのご案内となります。お近くでお待ちください。');
+            setText('waitingInfoDisplay', appData.waitingInfoText || 'まもなくご案内いたします。待合スペースにお集まりください。');
+
             const annCard = document.getElementById('announcementCard');
             const annText = document.getElementById('announcementText');
             if (annCard && annText) {
-                if (appData.announcement && appData.announcement.trim() !== "") {
+                if (appData.announcement && appData.announcement.trim() !== '') {
                     annText.innerText = appData.announcement;
                     annCard.classList.remove('hidden');
                 } else {
@@ -773,46 +766,8 @@
                 }
             }
 
-            setText('mainVenueNameDisplay', appData.venueName || '');
-            setText('currentSessionDisplay', appData.currentSessionId || '');
-            
-            const curItem = appData.schedule.find(s => s.id === appData.currentSessionId);
-            if (curItem) {
-                setText('currentTicketDisplay', curItem.ticket);
-                setText('currentStartTimeBadge', `予定開始: ${curItem.startTime}`);
-            } else {
-                setText('currentTicketDisplay', "--");
-                setText('currentStartTimeBadge', "予定開始: --:--");
-            }
-
-            const currentBox = document.getElementById('currentBox');
-            const currentBadgeContainer = document.getElementById('mainStatusBadgeContainer');
-            setText('currentNoteDisplay', appData.currentNote || "まもなくのご案内となります。");
-
-            if (currentBox && currentBadgeContainer) {
-                if (appData.currentVenueStatus === '席入り中') {
-                    currentBox.className = "p-5 sm:p-6 rounded-xl border bg-white border-[#c5a880] shadow-sm space-y-4 transition-all duration-300";
-                    currentBadgeContainer.innerHTML = '<span class="bg-[#2c4a3e] text-white px-3 py-1 rounded-full text-xs font-bold shadow-xs">🟢 席入り中（すぐに入場可能）</span>';
-                } else if (appData.currentVenueStatus === 'お点前中') {
-                    currentBox.className = "p-5 sm:p-6 rounded-xl border bg-[#faeded] border-rose-300 shadow-sm space-y-4 transition-all duration-300";
-                    currentBadgeContainer.innerHTML = '<span class="bg-rose-700 text-white px-3 py-1 rounded-full text-xs font-bold shadow-xs">🔴 お点前中（入場締め切り・次回待機）</span>';
-                } else {
-                    currentBox.className = "p-5 sm:p-6 rounded-xl border bg-[#f4f0e6] border-[#d6cebe] shadow-sm space-y-4 transition-all duration-300";
-                    currentBadgeContainer.innerHTML = '<span class="bg-[#736a5c] text-white px-3 py-1 rounded-full text-xs font-bold shadow-xs">⏳ 準備・片付け中</span>';
-                }
-            }
-
-            setText('nextGroupDisplay', appData.nextSessionId || '');
-            const nextItem = appData.schedule.find(s => s.id === appData.nextSessionId);
-            if (nextItem) {
-                setText('nextTicketDisplay', `${nextItem.ticket} (予定 ${nextItem.startTime})`);
-            } else {
-                setText('nextTicketDisplay', "--");
-            }
-            setText('waitingInfoDisplay', appData.waitingInfoText || '');
-
             renderScheduleTable();
-            setText('lastUpdatedTime', appData.lastUpdated || "--:--:--");
+            updateUrlDisplay();
         }
 
         function renderScheduleTable() {
@@ -835,49 +790,50 @@
                     statusBadge = '<span class="bg-[#e8e2d5] text-[#595247] px-2 py-0.5 rounded text-[11px] font-medium">待機</span>';
                 }
 
+                const adminOps = isAdmin ? `
+                    <td class="p-2.5 whitespace-nowrap admin-only">
+                        <div class="flex items-center gap-1">
+                            <button onclick="quickSetStatus('${item.id}', '席入り中')" class="text-[10px] bg-[#2c4a3e] hover:bg-[#1f352c] text-white px-2 py-1 rounded font-bold transition shadow-xs" title="席入り中に設定">席入</button>
+                            <button onclick="quickSetStatus('${item.id}', 'お点前中')" class="text-[10px] bg-rose-700 hover:bg-rose-800 text-white px-2 py-1 rounded font-bold transition shadow-xs" title="お点前中に設定">点前</button>
+                        </div>
+                    </td>
+                ` : `<td class="p-2.5 whitespace-nowrap admin-only hidden"></td>`;
+
                 tr.innerHTML = `
                     <td class="p-2.5 font-bold text-[#2b2b2b] whitespace-nowrap">${item.id}</td>
                     <td class="p-2.5 font-mono font-bold text-[#2c4a3e]">${item.ticket}</td>
                     <td class="p-2.5 font-mono font-bold">${item.startTime}</td>
                     <td class="p-2.5 font-mono">${item.attendees}名</td>
                     <td class="p-2.5 whitespace-nowrap">${statusBadge}</td>
-                    <td class="p-2.5 whitespace-nowrap no-print">
-                        <div class="flex items-center gap-1">
-                            <button onclick="quickSetStatus('${item.id}', '席入り中')" class="text-[10px] bg-[#2c4a3e] hover:bg-[#1f352c] text-white px-2 py-1 rounded font-bold transition shadow-xs" title="席入り中に設定">席入</button>
-                            <button onclick="quickSetStatus('${item.id}', 'お点前中')" class="text-[10px] bg-rose-700 hover:bg-rose-800 text-white px-2 py-1 rounded font-bold transition shadow-xs" title="お点前中に設定">点前</button>
-                        </div>
-                    </td>
+                    ${adminOps}
                 `;
                 tbody.appendChild(tr);
             });
+
+            window.updateRoleUI();
         }
 
-        window.quickSetStatus = function(sessionId, venueStatus) {
-            appData.currentSessionId = sessionId;
-            appData.currentVenueStatus = venueStatus;
-            
+        window.quickSetStatus = function(id, newStatus) {
             appData.schedule.forEach(s => {
-                if (s.id === sessionId) {
-                    s.status = venueStatus;
-                } else if (s.status === '席入り中' || s.status === 'お点前中') {
+                if (s.id === id) {
+                    s.status = newStatus;
+                } else if (newStatus === '席入り中' && s.status === '席入り中') {
                     s.status = '終了';
                 }
             });
-
-            const currentIndex = appData.schedule.findIndex(s => s.id === sessionId);
-            if (currentIndex > -1 && currentIndex + 1 < appData.schedule.length) {
-                appData.nextSessionId = appData.schedule[currentIndex + 1].id;
-                appData.waitingInfoText = `まもなく ${appData.nextSessionId} (${appData.schedule[currentIndex + 1].ticket}) のご案内をいたします。待合スペースにお集まりください。`;
-            } else {
-                appData.nextSessionId = "最終回案内完了";
-                appData.waitingInfoText = "すべての会の席入りが完了いたしました。ご参加ありがとうございました。";
-            }
-
             saveToCloudOrLocal();
-            showToast(`${sessionId} を「${venueStatus}」に設定しました`);
+            showToast(`${id} を「${newStatus}」に変更しました`);
         };
 
         window.openAdminModal = function() {
+            if (!isAdmin) return;
+
+            const cfg = getFirebaseConfig();
+            const fbConfigInput = document.getElementById('adminFirebaseConfigInput');
+            if (fbConfigInput && cfg) {
+                fbConfigInput.value = JSON.stringify(cfg, null, 2);
+            }
+
             const titleEl = document.getElementById('adminEventTitleInput');
             if (titleEl) titleEl.value = appData.eventTitle;
             const dateEl = document.getElementById('adminEventDateInput');
@@ -944,6 +900,53 @@
         window.removeScheduleRow = function(index) {
             appData.schedule.splice(index, 1);
             renderAdminScheduleTable();
+        };
+
+        window.syncDateFromPicker = function(val) {
+            if (!val) return;
+            const parts = val.split('-');
+            if (parts.length === 3) {
+                const dateObj = new Date(parts[0], parts[1] - 1, parts[2]);
+                const days = ['日', '月', '火', '水', '木', '金', '土'];
+                const text = `${parts[0]}年${parseInt(parts[1])}月${parseInt(parts[2])}日(${days[dateObj.getDay()]})`;
+                const input = document.getElementById('adminEventDateInput');
+                if (input) input.value = text;
+            }
+        };
+
+        window.setPresetDate = function(type) {
+            const today = new Date();
+            let target = new Date();
+            if (type === 'tomorrow') {
+                target.setDate(today.getDate() + 1);
+            } else if (type === 'sat') {
+                target.setDate(today.getDate() + (6 - today.getDay() + 7) % 7);
+            } else if (type === 'sun') {
+                target.setDate(today.getDate() + (7 - today.getDay()) % 7);
+            }
+            const yyyy = target.getFullYear();
+            const mm = String(target.getMonth() + 1).padStart(2, '0');
+            const dd = String(target.getDate()).padStart(2, '0');
+            const picker = document.getElementById('adminEventDatePicker');
+            if (picker) {
+                picker.value = `${yyyy}-${mm}-${dd}`;
+                window.syncDateFromPicker(picker.value);
+            }
+        };
+
+        window.setPresetTime = function(tStr) {
+            const el = document.getElementById('autoStartHourInput');
+            if (el) el.value = tStr;
+        };
+
+        window.setPresetInterval = function(min) {
+            const el = document.getElementById('autoIntervalMinutes');
+            if (el) el.value = min;
+        };
+
+        window.setPresetAttendees = function(count) {
+            const el = document.getElementById('autoAttendeesPerSession');
+            if (el) el.value = count;
         };
 
         window.applyAutoScheduleTimes = function() {
@@ -1019,7 +1022,7 @@
                 appData.schedule = newSchedule;
             }
 
-            closeAdminModal();
+            window.closeAdminModal();
             saveToCloudOrLocal();
             showToast("設定を保存・適用しました！");
         };
@@ -1033,10 +1036,6 @@
         window.closeFlyerModal = function() {
             const modal = document.getElementById('flyerModal');
             if (modal) modal.classList.add('hidden');
-        };
-
-        window.changeLanguage = function(lang) {
-            setText('eventTitleDisplay', appData.eventTitle || 'お茶会');
         };
 
         function updateQrCode() {
